@@ -12,11 +12,6 @@ yay_install() {
   yay -S --needed --noconfirm "$@"
 }
 
-service_user_enable() {
-  systemctl --user is-enabled "$1" &>/dev/null || \
-  systemctl --user enable --now "$1"
-}
-
 # -----------------------------
 # Enable multilib
 # -----------------------------
@@ -36,14 +31,19 @@ sudo pacman -Syu --noconfirm
 # Base packages
 # -----------------------------
 pacman_install \
+  kitty \
+  bluez bluez-utils \
   base-devel git \
+  hyprland sudo wget curl \
   wayland wayland-protocols \
   xorg-xwayland xorg-xhost \
   pipewire wireplumber \
+  greetd greetd-gtkgreet \
   pipewire-audio pipewire-alsa pipewire-pulse pipewire-jack \
   lib32-pipewire lib32-pipewire-jack lib32-libpulse \
   xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
   polkit-gnome \
+  efibootmgr \
   zsh zsh-autosuggestions zsh-syntax-highlighting \
   nautilus gparted \
   rofi waybar slurp grim cliphist hyprlock hypridle \
@@ -56,6 +56,32 @@ pacman_install \
   gst-plugins-{base,good,bad,ugly} \
   samba gnutls sdl2-compat \
   virtualbox virtualbox-host-modules-arch \
+  swaync \
+  font-manager \
+  mangohud lib32-mangohud gamemode lib32-gamemode goverlay vulkan-intel lib32-vulkan-intel vulkan-icd-loader lib32-vulkan-icd-loader vulkan-tools mesa lib32-mesa intel-media-driver steam \
+  discord \
+  blueman \
+  scrcpy wayvnc \
+  thermald \
+  flatpak \
+  xdg-utils \
+  linux-headers \
+  ufw \
+  swww \
+  eog \
+  matugen \
+  jq \
+  brightnessctl \
+  fastfetch \
+  rofi-emoji \
+  pacman-contrib \
+  rsync \
+  power-profiles-daemon \
+  gobject-introspection python-gobject \
+  satty \
+  qt5-base qt6-base qt5-tools qt6-tools qt5-wayland qt6-wayland \
+  evince \
+  haruna
 
 sudo modprobe vboxdrv
 sudo modprobe vboxnetflt
@@ -69,22 +95,64 @@ sudo pacman -Rns --noconfirm xdg-desktop-portal-wlr 2>/dev/null || true
 # -----------------------------
 # Enable PipeWire
 # -----------------------------
-service_user_enable pipewire.service
-service_user_enable wireplumber.service
-service_user_enable pipewire-pulse.socket
-service_user_enable pipewire-pulse.service
+sudo systemctl enable greetd.service
+sudo systemctl enable --now bluetooth
+systemctl --user enable --now pipewire.service
+systemctl --user enable --now wireplumber.service
+systemctl --user enable --now pipewire-pulse.socket
+systemctl --user enable --now pipewire-pulse.service
+sudo systemctl enable --now thermald.service
+sudo systemctl enable --now ufw.service
+sudo systemctl enable --now power-profiles-daemon
+
+# -----------------------------
+# Configure greetd
+# -----------------------------
+GREETD_CONFIG="/etc/greetd/config.toml"
+
+echo "==> Configuring greetd..."
+
+sudo mkdir -p /etc/greetd
+sudo touch "$GREETD_CONFIG"
+
+sudo grep -q '^\[default_session\]' "$GREETD_CONFIG" || \
+  sudo tee -a "$GREETD_CONFIG" >/dev/null <<EOF
+
+[default_session]
+command = "start-hyprland"
+user = "ziadlawatey"
+EOF
+
+sudo sed -i '
+/^\[default_session\]/,/^\[/ {
+  s/^command *=.*/command = "start-hyprland"/
+  s/^user *=.*/user = "ziadlawatey"/
+}
+' "$GREETD_CONFIG"
+
+sudo grep -q '^command *= *"start-hyprland"' "$GREETD_CONFIG" || \
+  sudo sed -i '/^\[default_session\]/a command = "start-hyprland"' "$GREETD_CONFIG"
+
+sudo grep -q '^user *= *"ziadlawatey"' "$GREETD_CONFIG" || \
+  sudo sed -i '/^\[default_session\]/a user = "ziadlawatey"' "$GREETD_CONFIG"
+
 
 # -----------------------------
 # NvChad setup
 # -----------------------------
 NVIM_DIR="$HOME/.config/nvim"
+NVCHAD_MARKER="$NVIM_DIR/lua/core/init.lua"
 
-if [ ! -d "$NVIM_DIR" ]; then
+if [ ! -f "$NVCHAD_MARKER" ]; then
   echo "==> Installing NvChad..."
-  git clone https://github.com/NvChad/starter "$NVIM_DIR"
+  git clone https://github.com/NvChad/starter "$NVIM_DIR" || true
 else
-  echo "==> NvChad already installed"
+  echo "==> NvChad already installed, skipping clone"
 fi
+
+# always run these
+cp -f N4ZL-Dotfiles/nvim_plugins/* "$NVIM_DIR/lua/plugins/"
+nvim
 
 INIT_LUA="$NVIM_DIR/init.lua"
 
@@ -117,20 +185,29 @@ fi
 # AUR packages
 # -----------------------------
 yay_install \
-  brave-bin \
   waypaper \
   pavucontrol \
   bibata-cursor-theme-bin \
   heroic-games-launcher-bin \
-  hyprland-plugin-hyprbars-git \
   elecwhat-bin \
   ttf-symbola \
-  wttrbar
+  wttrbar \
+  freedownloadmanager \
+  zen-browser-bin \
+  visual-studio-code-bin \
+  proton-ge-custom-bin \
+  protonup-qt-bin
+  spotify \
+  cmatrix-git
+
+cd /usr/share/icons/
+sudo rm -rf Bibata-Modern-Amber Bibata-Modern-Amber-Right Bibata-Modern-Classic-Right Bibata-Modern-Ice Bibata-Modern-Ice-Right Bibata-Original-Amber Bibata-Original-Amber Bibata-Original-Amber-Right Bibata-Original-Classic Bibata-Original-Classic-Right Bibata-Original-Ice Bibata-Original-Ice-Right
+cd ~/
 
 # -----------------------------
 # Flatpak
 # -----------------------------
-flatpak install -y flathub org.vinegarhq.Sober || true
+flatpak install flathub org.vinegarhq.Sober || true
 
 # -----------------------------
 # Nautilus default
@@ -139,11 +216,39 @@ xdg-mime query default inode/directory | grep -q Nautilus || \
 xdg-mime default org.gnome.Nautilus.desktop inode/directory
 
 # -----------------------------
+# Deploy dotfiles (force overwrite)
+# -----------------------------
+
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+curl -sS https://starship.rs/install.sh | sh
+git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+
+echo "==> Copying dotfiles to home (overwrite enabled)..."
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Copy .config (merge, overwrite same files)
+if [ -d "$SCRIPT_DIR/.config" ]; then
+  rsync -a "$SCRIPT_DIR/.config/" "$HOME/.config/"
+fi
+
+# Copy .local (merge, overwrite same files)
+if [ -d "$SCRIPT_DIR/.local" ]; then
+  rsync -a "$SCRIPT_DIR/.local/"  "$HOME/.local/"
+fi
+
+# Copy .zshrc (replace file)
+if [ -f "$SCRIPT_DIR/.zshrc" ]; then
+  cp -f "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
+fi
+
+# -----------------------------
 # Root GTK theming
 # -----------------------------
 sudo mkdir -p /root/.config
 sudo ln -sf ~/.config/gtk-3.0 /root/.config/
 sudo ln -sf ~/.config/gtk-4.0 /root/.config/
+sudo ln -sf ~/.config/nvim /root/.config/
 
 # -----------------------------
 # X access for root apps
@@ -159,6 +264,16 @@ sudo timedatectl set-ntp true
 
 timedatectl status | grep -E "Time zone|System clock synchronized|NTP service"
 
+cd ~/
+git clone https://github.com/vinceliuice/Colloid-icon-theme.git; cd Colloid-icon-theme/
+./install.sh -s default
+cd ~/
+rm -rf Colloid-icon-theme/
+
+cd /mnt
+
+sudo mkdir overall_storage others windows
+
 echo
 echo "✅ Setup complete."
 
@@ -171,3 +286,8 @@ if [[ "$REBOOT_CONFIRM" =~ ^[Yy]$ ]]; then
 else
   echo "Reboot skipped."
 fi
+
+
+#grim -g "$(slurp)" - | satty --early-exit --action-on-enter save-to-file --right-click-copy --filename - --output-filename ~/Pictures/screenshots/$(date '+%y-%d:%m-%H:%M').png
+
+

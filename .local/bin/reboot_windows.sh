@@ -6,7 +6,7 @@ WIN_BOOT_ENTRY=$(sudo efibootmgr | grep "Windows Boot Manager" | awk '{print $1}
 if [[ -n "$WIN_BOOT_ENTRY" ]]; then
     echo "Rebooting into Windows (Boot$WIN_BOOT_ENTRY)..."
     sudo efibootmgr --bootnext $WIN_BOOT_ENTRY
-    systemctl reboot
+    sudo systemctl reboot
 else
     echo "Windows Boot Manager not found!"
     exit 1

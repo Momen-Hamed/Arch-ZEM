@@ -17,7 +17,7 @@ if [ "$STATE" -eq 0 ]; then
     # Already disabled → reload Hyprland
     hyprctl reload
     powerprofilesctl set balanced
-    killall -CONT waybar 2>/dev/null
+  #  killall -CONT waybar 2>/dev/null
 else
     # Enabled → disable everything
     hyprctl --batch \
@@ -27,8 +27,7 @@ else
          keyword general:gaps_in 0; \
          keyword general:gaps_out 0; \
          keyword general:border_size 1; \
-         keyword decoration:rounding 0; \
-         keyword general:allow_tearing 1"
+         keyword decoration:rounding 0"
     powerprofilesctl set performance
-    killall -STOP waybar 2>/dev/null
+  #  killall -STOP waybar 2>/dev/null
 fi

@@ -1,105 +1,62 @@
 #!/usr/bin/env bash
 
-# ============================================================================
-# Matugen Reload Script
-# Reloads apps after wallpaper change without killing them
-# ============================================================================
-
-# ----------------------------------------------------------------------------
-# Argument Validation
-# ----------------------------------------------------------------------------
-
-
-
 echo "🎨 Generating theme with matugen..."
 echo "✅ Matugen completed successfully"
 
-# ----------------------------------------------------------------------------
-# Reload Applications
-# ----------------------------------------------------------------------------
+## Helper Functions
 
-echo "🎨 Reloading theme for all apps..."
+kill_if_running() { pgrep -x "$1" >/dev/null && pkill -x "$1"; }
 
-#!/usr/bin/env bash
-
-# -------- Helper functions --------
-
-kill_if_running() {
-    if pgrep -x "$1" >/dev/null; then
-        echo "Killing $1..."
-        pkill -x "$1"
-    fi
-}
-
-kill_and_restart() {
-    if pgrep -x "$1" >/dev/null; then
-        echo "Restarting $1..."
-        pkill -x "$1"
+restart_service() {
+    if pgrep -f "$1" >/dev/null; then
+        pkill -f "$1"
         sleep 0.5
-        eval "$2" &
+        $1 &>/dev/null &
     fi
 }
 
-# -------- Apps --------
+has_window() {
+    hyprctl clients -j | jq -e ".[] | select(.class == \"$1\")" >/dev/null 2>&1
+}
 
-# Kill only (no relaunch)
+## Reload Apps (Parallel Execution)
+
+# Waybar
+pkill waybar; waybar &>/dev/null &
+
+# Kill only
 kill_if_running waypaper
 
-# Kill + relaunch with sudo
-if pgrep -x gparted >/dev/null; then
-    echo "Restarting gparted with sudo..."
-    sudo pkill gparted
-    sleep 0.5
-    pkexec gparted
+# Nautilus - only restart if it has a visible window
+if has_window "org.gnome.Nautilus"; then
+    pkill -x nautilus
+    nautilus &>/dev/null &
 fi
 
-# GTK apps you want refreshed
-GTK_APPS=(
-    nautilus
-    gnome-clock
-    qalculate-gtk
-    pavucontrol
-    blueberry
-    apostrophe
-)
+# Other GTK Apps
+pgrep -x qalculate-gtk >/dev/null && { pkill -x qalculate-gtk; qalculate-gtk &>/dev/null & } &
+pgrep -x pavucontrol >/dev/null && { pkill -x pavucontrol; pavucontrol &>/dev/null & } &
+pgrep -x blueman-manager >/dev/null && { pkill -x blueman-manager; blueman-manager &>/dev/null & } &
 
-for app in "${GTK_APPS[@]}"; do
-    kill_and_restart "$app" "$app"
-done
-
-# ---------------------------------------
-# Polkit agent reload
-# ---------------------------------------
-POLKIT="/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
-
-if pgrep -f "$POLKIT" >/dev/null; then
-    echo "Restarting polkit agent"
-    pkill -f "$POLKIT"
-    sleep 0.5
-    "$POLKIT" &
+# GNOME Clocks - only restart if it has a visible window
+if has_window "org.gnome.clocks"; then
+    pkill -x gnome-clocks
+    gnome-clocks &>/dev/null &
 fi
 
-POL="/usr/lib/xdg-desktop-portal-gtk"
+# GNOME Text Editor (process name != binary name)
+pgrep -x gnome-text-edit >/dev/null && { pkill -x gnome-text-edit; gnome-text-editor &>/dev/null & } &
 
-if pgrep -f "$POL" >/dev/null; then
-    echo "Restarting polkit agent"
-    pkill -f "$POL"
-    sleep 0.5
-    "$POL" &
-fi
+# System Services (need delay to restart properly)
+restart_service "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1" &
+restart_service "/usr/lib/xdg-desktop-portal-gtk" &
 
+# GParted
+pgrep -x gparted >/dev/null && { sudo pkill gparted; sudo -E gparted & }
 
-echo "✔ GTK apps reload complete"
+# Spotify
+pgrep -x spotify >/dev/null && { spicetify config color_scheme dark && spicetify apply & }
 
-
-# Reload Spicetify
-if pgrep -x "spotify" > /dev/null; then
-    echo "🔄 Reloading Spotify theme..."
-    spicetify config color_scheme dark
-    spicetify apply
-    echo "   ✓ Spotify theme applied"
-else
-    echo "⏭️  Spotify not running, skipping..."
-fi
+wait  # Wait for all background jobs to complete
 
 echo "✅ Theme reload complete!"
