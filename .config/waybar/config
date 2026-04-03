@@ -23,41 +23,40 @@
     "custom/notifications"
   ],
   "group/system": {
-  "orientation": "horizontal",  // or "vertical"
-  // "on-click": "swaync-client -t -sw",
-  "modules": [
-    "battery",
-    "bluetooth",
-    "network",
-    "custom/volume"
-  ]
-},
-"custom/power_options": {
+    "orientation": "horizontal",
+    "modules": [
+      "battery",
+      "bluetooth",
+      "custom/network",
+      "custom/volume"
+    ]
+  },
+  "custom/power_options": {
     "format": "⏻",
     "exec": "~/.config/waybar/scripts/power_info.sh",
     "on-click": "~/.config/rofi/scripts/power_menu.sh",
     "return-type": "json",
     "tooltip": true,
     "interval": 60
-},
-"custom/keyboard": {
+  },
+  "custom/keyboard": {
     "exec": "~/.config/waybar/scripts/kb_layout.sh",
     "interval": 1,
     "format": "{}",
     "tooltip": false
-},
-"bluetooth": {
-  "format": "󰂯",
-  "format-disabled": "󰂲",
-  "format-off": "󰂲",
-  "format-connected-battery": "󰂱",
-  "tooltip": true,
-  "tooltip-format": "Bluetooth: {status}",
+  },
+  "bluetooth": {
+    "format": "󰂯",
+    "format-disabled": "󰂲",
+    "format-off": "󰂲",
+    "format-connected-battery": "󰂱",
+    "tooltip": true,
+    "tooltip-format": "Bluetooth: {status}",
     "tooltip-format-connected": "{device_enumerate}",
     "tooltip-format-enumerate-connected": "{device_alias} | {device_battery_percentage}%",
     "on-click": "overskride"
-},
-"custom/media_player": {
+  },
+  "custom/media_player": {
     "format": "{}",
     "return-type": "json",
     "max-length": 40,
@@ -68,7 +67,7 @@
     "on-click-middle": "~/.config/waybar/scripts/media_player.sh mute",
     "on-scroll-up": "~/.config/waybar/scripts/media_player.sh up",
     "on-scroll-down": "~/.config/waybar/scripts/media_player.sh down"
-},
+  },
   "hyprland/workspaces": {
     "disable-scroll": true,
     "active-only": false,
@@ -83,65 +82,56 @@
       "*": 5
     }
   },
-"tray": {
-  "spacing": 9,
-  "icon-size": 15,
-  "reverse-direction": false,
-},
-"clock": {
+  "tray": {
+    "spacing": 9,
+    "icon-size": 15,
+    "reverse-direction": false
+  },
+  "clock": {
     "format": "{:%I:%M %p} ",
     "on-click": "gnome-calendar",
     "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
     "calendar": {
-      "weeks-pos": "right", 
-        "mode": "month",
-        "on-scroll": 1,
-        "format": {
-            "months": "<span color='#ffead3'><b>{}</b></span>",
-            "days": "<span color='#ecc6d9'>{}</span>",
-            "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
-            "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
-            "today": "<span color='#ff6699'><b><u>{}</u></b></span>"
-        }
+      "weeks-pos": "right",
+      "mode": "month",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#ffead3'><b>{}</b></span>",
+        "days": "<span color='#ecc6d9'>{}</span>",
+        "weeks": "<span color='#99ffdd'><b>W{}</b></span>",
+        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+        "today": "<span color='#ff6699'><b><u>{}</u></b></span>"
+      }
     },
     "actions": {
-        "on-scroll-up": "shift_up",
-        "on-scroll-down": "shift_down"
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
     }
-},
-  "network": {
-    "format-wifi": "{icon}",
-    "format-icons": [
-      "󰤯",
-      "󰤟",
-      "󰤢",
-      "󰤥",
-      "󰤨"
-    ],
-    "format-ethernet": "󰀂",
-    "format-disconnected": "󰖪",
-    "tooltip-format-wifi": "{icon}  {essid}\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
-    "tooltip-format-ethernet": "󰀂  {ifname}\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
-    "tooltip-format-disconnected": "Disconnected",
-    "on-click": "nmgui",
+  },
+  "custom/network": {
+    "exec": "~/.config/waybar/scripts/network-display.sh",
+    "return-type": "json",
     "interval": 5,
-    "nospacing": 1
+    "signal": 8,
+    "on-click": "nmgui",
+    "on-click-right": "~/.config/waybar/scripts/network-toggle-display.sh"
   },
+  "tooltip-format-disconnected": "Disconnected",
   "custom/notifications": {
-  "exec": "swaync-client -swb",
-  "return-type": "json",
-  "format": "{icon}",
-  "format-icons": {
-    "notification": "󰂚",  // Filled bell when there are notifications
-    "none": "󰂜",          // Empty bell when no notifications
-    "dnd-notification": "󰂛",  // Bell with slash when DND is on
-    "dnd-none": "󰪑"
+    "exec": "swaync-client -swb",
+    "return-type": "json",
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󰂚",
+      "none": "󰂜",
+      "dnd-notification": "󰂛",
+      "dnd-none": "󰪑"
+    },
+    "tooltip": true,
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw"
   },
-  "tooltip": false,
-  "on-click": "swaync-client -t -sw",
-  "on-click-right": "swaync-client -d -sw"
-},
-"custom/volume": {
+  "custom/volume": {
     "exec": "~/.config/waybar/scripts/volume_icon_fix.sh",
     "interval": 1,
     "format": "{}",
@@ -150,38 +140,37 @@
     "on-click-middle": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
     "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+",
     "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
-},
-"battery": {
-        "interval": 2,
-        "states": {
-            "warning": 25,
-            "critical": 15
-        },
-        "format": "{icon}",
-        "format-icons": ["", "", "", "", ""],
-        "tooltip": true,
-        "tooltip-format": "{capacity}% | {timeTo}",
-        "tooltip-format-charging": "+ {capacity}% | {timeTo}",
-      },
-  // "custom/waybar-media": {
-  //   "format": "{player_icon} {artist} - {title}",
-  //   "max-length": 40,
-  //   "on-click": "playerctl play-pause",
-  //   "on-scroll-up": "playerctl next",
-  //   "on-scroll-down": "playeryctl previous"
-  // }
-"custom/weather": {
+  },
+  "battery": {
+    "interval": 2,
+    "states": {
+      "warning": 25,
+      "critical": 15
+    },
+    "format": "{icon}",
+    "format-icons": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "tooltip": true,
+    "tooltip-format": "{capacity}% | {timeTo}",
+    "tooltip-format-charging": "+ {capacity}% | {timeTo}"
+  },
+  "custom/weather": {
     "exec": "~/.config/waybar/scripts/weather.sh",
     "interval": 1800,
     "on-click": "gnome-weather",
     "return-type": "json",
     "format": "{}",
     "tooltip": true
-},
-"custom/launcher": {
+  },
+  "custom/launcher": {
     "format": "󰀻",
     "on-click": "~/.config/rofi/scripts/launch_options.sh launcher",
     "tooltip": true,
     "tooltip-format": "Launcher"
-}
+  }
 }

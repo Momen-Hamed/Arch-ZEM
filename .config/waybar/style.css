@@ -3,7 +3,7 @@
 * {
   min-height: 0;
   font-family: "SF Pro Display", sans-serif;
-  border-radius: 18px;
+  border-radius: 12px;
   margin: 0;
   padding: 0;
   border: none;
@@ -19,36 +19,35 @@ window#waybar.empty #window {
 }
 
 #workspaces button {
-  margin: 0 2px;
-  padding: 0 5px;
-  border-radius: 15px;
+  margin: 0 2.5px;
+  padding: 0 12px;
+  border-radius: 8px;
   font-weight: 700;
-  /* min-width: 5px; */
+  background-color: @surface_bright;
   transition: all 0.3s ease-in-out;
 }
 
 #workspaces button.active {
-  color: #2f354a;
-  background-color: @primary;
-  min-width: 35px;
+  color: @background;
+  background-color: @primary_fixed_dim;
+  min-width: 28px;
   transition: all 0.3s ease-in-out;
 }
 
 #workspaces button:not(.empty) {
-  background-color: @primary;
-  color: #2f354a;
+  background-color: @primary_fixed_dim;
+  color: @background;
 }
 
 #workspaces button.urgent {
-  background-color: #cdd6f4;
-  color: #2f354a;
-  min-width: 35px;
+  background-color: @error;
+  color: @on_error;
+  min-width: 28px;
 }
 
 #workspaces button:hover {
-  background-color: @on_error_container;
-  color: #2f354a;
-  min-width: 35px;
+  background-color: @secondary_fixed;
+  color: @background;
 }
 
 #custom-media_player {
@@ -80,12 +79,17 @@ window#waybar.empty #window {
 }
 
 #custom-notifications {
-  padding: 1px 17px 0 15px;
+  padding: 1px 18px 0 15px;
   background-color: @surface_container;
   font-weight: 700;
   /* background-color: #2b292f; */
   /* margin: 5px 0; */
   font-size: 17px;
+}
+
+#custom-notifications.dnd-notification,
+#custom-notifications.dnd-none {
+  padding: 1px 19px 0 14px;
 }
 
 #clock {
@@ -98,6 +102,10 @@ window#waybar.empty #window {
 }
 
 #workspaces {
+  /* border: 0.5px solid #032412; */
+  /* margin: 5px 5px 5px 5px; */
+  /* padding: 0 5px; */
+  border-radius: 18px;
   /* border-radius: 11px; */
   padding: 5px 5px;
   background-color: @surface_container;
@@ -129,7 +137,7 @@ window#waybar.empty #window {
   margin-right: 13px;
 }
 
-#network {
+#custom-network {
   margin-right: 16px;
 }
 
@@ -175,7 +183,7 @@ window#waybar.empty #window {
 }
 
 #custom-keyboard {
-  padding: 0.2px 15px 0;
+  padding: 0.2px 16px 0 13px;
   font-size: 13px;
   font-weight: 700;
   /* margin: 5px 0; */

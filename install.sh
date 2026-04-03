@@ -1,4 +1,6 @@
-!/usr/bin/env bash
+#/usr/bin/env bash
+
+# mesa lib32-mesa -media-driver vulkan-intel lib32-vulkan-intel
 set -e
 
 # -----------------------------
@@ -33,12 +35,12 @@ sudo pacman -Syu --noconfirm
 pacman_install \
   kitty \
   bluez bluez-utils \
-  base-devel git \
+  base-devel git cpio cmake pkg-config gcc \
   hyprland sudo wget curl \
   wayland wayland-protocols \
   xorg-xwayland xorg-xhost \
   pipewire wireplumber \
-  greetd greetd-gtkgreet \
+  greetd \
   pipewire-audio pipewire-alsa pipewire-pulse pipewire-jack \
   lib32-pipewire lib32-pipewire-jack lib32-libpulse \
   xdg-desktop-portal xdg-desktop-portal-hyprland xdg-desktop-portal-gtk \
@@ -51,14 +53,14 @@ pacman_install \
   gnome-clocks gnome-text-editor \
   inter-font noto-fonts-emoji nerd-fonts noto-fonts-cjk \
   adw-gtk-theme ntfs-3g \
-  wine wine-mono wine-gecko winetricks \
+   wine-mono wine-gecko winetricks zenity \
   ffmpeg gamescope telegram-desktop \
   gst-plugins-{base,good,bad,ugly} \
   samba gnutls sdl2-compat \
   virtualbox virtualbox-host-modules-arch \
   swaync \
   font-manager \
-  mangohud lib32-mangohud gamemode lib32-gamemode goverlay vulkan-intel lib32-vulkan-intel vulkan-icd-loader lib32-vulkan-icd-loader vulkan-tools mesa lib32-mesa intel-media-driver steam \
+  mangohud lib32-mangohud gamemode lib32-gamemode goverlay  vulkan-icd-loader lib32-vulkan-icd-loader vulkan-tools steam \
   discord \
   blueman \
   scrcpy wayvnc \
@@ -89,7 +91,10 @@ pacman_install \
   gnome-weather \
   vkd3d \
   sound-theme-freedesktop libcanberra libcanberra-pulse socat \
-  gnome-system-monitor
+  gnome-system-monitor \
+  timeshift \
+  wtype \
+  bc
 
 sudo modprobe vboxdrv
 sudo modprobe vboxnetflt
@@ -159,7 +164,7 @@ else
 fi
 
 # always run these
-cp -f N4ZL-Dotfiles/nvim_plugins/* "$NVIM_DIR/lua/plugins/"
+cp -f nvim_plugins/* "$NVIM_DIR/lua/plugins/"
 nvim
 
 INIT_LUA="$NVIM_DIR/init.lua"
@@ -202,7 +207,7 @@ yay_install \
   zen-browser-bin \
   visual-studio-code-bin \
   proton-ge-custom-bin \
-  protonup-qt-bin
+  protonup-qt-bin \
   spotify \
   cmatrix-git \
   overskride-bin \
@@ -210,7 +215,9 @@ yay_install \
   nmgui-bin \
   network-manager-applet \
   ocean-sound-theme \
-  adwsteamgtk
+  adwsteamgtk \
+  grimblast-git \
+  dxvk-bin
 
 cd /usr/share/icons/
 sudo rm -rf Bibata-Modern-Amber Bibata-Modern-Amber-Right Bibata-Modern-Classic-Right Bibata-Modern-Ice Bibata-Modern-Ice-Right Bibata-Original-Amber Bibata-Original-Amber Bibata-Original-Amber-Right Bibata-Original-Classic Bibata-Original-Classic-Right Bibata-Original-Ice Bibata-Original-Ice-Right

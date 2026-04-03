@@ -210,4 +210,6 @@ if [[ -n "$artist" ]]; then
 else
     text="$status_icon$muted_icon  $title"
 fi
-echo "{\"text\": \"$text\", \"class\": \"$class\", \"tooltip\": \"$active_player\"}"
+
+tooltip="$player_icon  $(echo "$player_name" | sed 's/\b./\u&/g')"
+echo "{\"text\": \"$text\", \"class\": \"$class\", \"tooltip\": \"$tooltip\"}"
