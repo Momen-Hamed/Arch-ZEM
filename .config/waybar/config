@@ -25,7 +25,7 @@
   "group/system": {
     "orientation": "horizontal",
     "modules": [
-      "battery",
+      "custom/battery",
       "bluetooth",
       "custom/network",
       "custom/volume"
@@ -141,23 +141,13 @@
     "on-scroll-up": "wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+",
     "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   },
-  "battery": {
+  "custom/battery": {
+    "exec": "~/.config/waybar/scripts/battery.sh",
+    "return-type": "json",
     "interval": 2,
-    "states": {
-      "warning": 25,
-      "critical": 15
-    },
-    "format": "{icon}",
-    "format-icons": [
-      "",
-      "",
-      "",
-      "",
-      ""
-    ],
+    "format": "{}",
     "tooltip": true,
-    "tooltip-format": "{capacity}% | {timeTo}",
-    "tooltip-format-charging": "+ {capacity}% | {timeTo}"
+    "on-click-right": "~/.config/waybar/scripts/battery.sh switch"
   },
   "custom/weather": {
     "exec": "~/.config/waybar/scripts/weather.sh",

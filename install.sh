@@ -32,13 +32,6 @@ echo "==> Updating system..."
 sudo pacman -Syu --noconfirm
 
 # -----------------------------
-# Diagnose
-# -----------------------------
-if [ -f "$SCRIPT_DIR/diagnose.sh" ]; then
-  bash "$SCRIPT_DIR/diagnose.sh"
-fi
-
-# -----------------------------
 # Base packages
 # -----------------------------
 pacman_install \
@@ -525,6 +518,12 @@ else
     grep -q "monitors.conf" "$HYPRLAND_CONF" || \
       sed -i '1s|^|source = ~/.config/hypr/hyprland/monitors.conf\n|' "$HYPRLAND_CONF"
   fi
+fi
+# -----------------------------
+# Diagnose
+# -----------------------------
+if [ -f "$SCRIPT_DIR/diagnose.sh" ]; then
+  bash "$SCRIPT_DIR/diagnose.sh"
 fi
 
 # -----------------------------

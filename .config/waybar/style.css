@@ -141,7 +141,7 @@ window#waybar.empty #window {
   margin-right: 16px;
 }
 
-#battery {
+#custom-battery {
   margin-right: 18px;
   color: @on_tertiary_container;
   background-color: @surface_container;
