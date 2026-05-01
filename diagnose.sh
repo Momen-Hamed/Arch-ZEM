@@ -185,6 +185,16 @@ fi
 
 install_packages "$all_packages"
 
+# ─── Battery cleanup ──────────────────────────────────────────────────────────
+
+if ! $HAS_BATTERY; then
+    BATTERY_SCRIPT="$HOME/.config/hypr/hyprlock/scripts/battery.sh"
+    if [ -f "$BATTERY_SCRIPT" ]; then
+        rm -f "$BATTERY_SCRIPT"
+        echo "│  Battery script removed (no battery detected)"
+    fi
+fi
+
 echo ""
 echo "✔ Done."
 

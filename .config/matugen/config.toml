@@ -75,8 +75,3 @@ output_path = '/tmp/arch.svg'
 #input_path = "./templates/swaync.css"
 #output_path = "~/.config/swaync/colors.css"
 #post_hook = "swaync-client -rs"
-
-[templates.steam]
-input_path = './templates/steam.css'
-output_path = '~/.config/AdwSteamGtk/custom.css'
-post_hook =  'adwaita-steam-gtk -i'

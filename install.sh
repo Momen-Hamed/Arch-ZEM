@@ -183,7 +183,7 @@ if [[ "$EDITOR_CHOICE" == "1" ]]; then
   else
     echo "==> NvChad already installed, skipping clone"
   fi
-  cp -f nvim_plugins/* "$NVIM_DIR/lua/plugins/"
+  cp -f "$HOME/nvim_plugins/*" "$NVIM_DIR/lua/plugins/"
   nvim
   INIT_LUA="$NVIM_DIR/init.lua"
   if ! grep -q "Load matugen colors" "$INIT_LUA" 2>/dev/null; then
@@ -230,7 +230,8 @@ yay_install \
   dxvk-bin \
   darkly-qt6-git \
   darkly-qt5-git \
-  swayosd-git
+  swayosd-git \
+  snappy-switcher
 
 # -----------------------------
 # Browser
@@ -294,6 +295,239 @@ if [ -f "$SCRIPT_DIR/.zshrc" ]; then
 fi
 
 # -----------------------------
+# Monitor configuration
+# -----------------------------
+echo "==> Detecting monitors..."
+
+MONITORS=()
+MONITOR_INFO=()
+
+if command -v hyprctl &>/dev/null && hyprctl monitors &>/dev/null 2>&1; then
+  mapfile -t RAW < <(hyprctl monitors -j 2>/dev/null)
+  mapfile -t MONITOR_NAMES < <(echo "${RAW[@]}" | jq -r '.[].name')
+  mapfile -t MONITOR_RES   < <(echo "${RAW[@]}" | jq -r '.[].width|tostring' | paste - <(echo "${RAW[@]}" | jq -r '.[].height|tostring') | sed 's/\t/x/')
+  mapfile -t MONITOR_HZ    < <(echo "${RAW[@]}" | jq -r '.[].refreshRate')
+  mapfile -t MONITOR_MAKE  < <(echo "${RAW[@]}" | jq -r '.[].make // "Unknown"')
+  mapfile -t MONITOR_MODEL < <(echo "${RAW[@]}" | jq -r '.[].model // "Unknown"')
+else
+  if command -v kmsprint &>/dev/null; then
+    mapfile -t MONITOR_NAMES < <(kmsprint | grep -oP '(?<=Connector )\S+')
+  else
+    mapfile -t MONITOR_NAMES < <(ls /sys/class/drm/ | grep -v render | grep -v card[0-9]$ | sed 's/card[0-9]-//')
+  fi
+  MONITOR_RES=()
+  MONITOR_HZ=()
+  MONITOR_MAKE=()
+  MONITOR_MODEL=()
+  for m in "${MONITOR_NAMES[@]}"; do
+    MONITOR_RES+=("unknown")
+    MONITOR_HZ+=("unknown")
+    MONITOR_MAKE+=("unknown")
+    MONITOR_MODEL+=("unknown")
+  done
+fi
+
+MONITOR_COUNT=${#MONITOR_NAMES[@]}
+
+if [[ "$MONITOR_COUNT" -eq 0 ]]; then
+  echo "==> No monitors detected, skipping monitor configuration."
+else
+  echo ""
+  echo "==> Detected monitors:"
+  for i in "${!MONITOR_NAMES[@]}"; do
+    echo "  [$((i+1))] ${MONITOR_NAMES[$i]} — ${MONITOR_MAKE[$i]} ${MONITOR_MODEL[$i]} — ${MONITOR_RES[$i]} @ ${MONITOR_HZ[$i]}Hz"
+  done
+  echo ""
+
+  # --- Primary monitor ---
+  PRIMARY_IDX=0
+  if [[ "$MONITOR_COUNT" -gt 1 ]]; then
+    while true; do
+      read -rp "Select primary monitor [1-${MONITOR_COUNT}]: " PRIMARY_CHOICE
+      if [[ "$PRIMARY_CHOICE" =~ ^[0-9]+$ ]] && (( PRIMARY_CHOICE >= 1 && PRIMARY_CHOICE <= MONITOR_COUNT )); then
+        PRIMARY_IDX=$(( PRIMARY_CHOICE - 1 ))
+        break
+      fi
+      echo "  Invalid choice, try again."
+    done
+  else
+    echo "==> Only one monitor detected, setting it as primary."
+  fi
+  PRIMARY_MON="${MONITOR_NAMES[$PRIMARY_IDX]}"
+  echo "==> Primary monitor: $PRIMARY_MON"
+
+  # --- Per-monitor layout configuration ---
+  declare -A MON_POSITION
+  declare -A MON_ALIGN
+  declare -A MON_TRANSFORM
+
+  for i in "${!MONITOR_NAMES[@]}"; do
+    MON="${MONITOR_NAMES[$i]}"
+    [[ "$i" -eq "$PRIMARY_IDX" ]] && LABEL="(primary)" || LABEL=""
+    echo ""
+    echo "--- Configuring monitor: $MON $LABEL ---"
+
+    if [[ "$i" -ne "$PRIMARY_IDX" ]]; then
+      echo "  Where should $MON be placed relative to the primary monitor?"
+      echo "    1) Left"
+      echo "    2) Right"
+      echo "    3) Above (top)"
+      echo "    4) Below (bottom)"
+      while true; do
+        read -rp "  Choice [1-4]: " SIDE_CHOICE
+        case "$SIDE_CHOICE" in
+          1) MON_POSITION[$i]="left"  ; break ;;
+          2) MON_POSITION[$i]="right" ; break ;;
+          3) MON_POSITION[$i]="top"   ; break ;;
+          4) MON_POSITION[$i]="bottom"; break ;;
+          *) echo "  Invalid choice, try again." ;;
+        esac
+      done
+
+      SIDE="${MON_POSITION[$i]}"
+      if [[ "$SIDE" == "left" || "$SIDE" == "right" ]]; then
+        echo "  How should $MON be vertically aligned relative to the primary?"
+        echo "    1) Top-aligned"
+        echo "    2) Center-aligned"
+        echo "    3) Bottom-aligned"
+        while true; do
+          read -rp "  Choice [1-3]: " ALIGN_CHOICE
+          case "$ALIGN_CHOICE" in
+            1) MON_ALIGN[$i]="top"   ; break ;;
+            2) MON_ALIGN[$i]="center"; break ;;
+            3) MON_ALIGN[$i]="bottom"; break ;;
+            *) echo "  Invalid choice, try again." ;;
+          esac
+        done
+      else
+        echo "  How should $MON be horizontally aligned relative to the primary?"
+        echo "    1) Left-aligned"
+        echo "    2) Center-aligned"
+        echo "    3) Right-aligned"
+        while true; do
+          read -rp "  Choice [1-3]: " ALIGN_CHOICE
+          case "$ALIGN_CHOICE" in
+            1) MON_ALIGN[$i]="left"  ; break ;;
+            2) MON_ALIGN[$i]="center"; break ;;
+            3) MON_ALIGN[$i]="right" ; break ;;
+            *) echo "  Invalid choice, try again." ;;
+          esac
+        done
+      fi
+    else
+      MON_POSITION[$i]="primary"
+      MON_ALIGN[$i]="none"
+    fi
+
+    echo "  Orientation for $MON:"
+    echo "    1) Horizontal (normal)"
+    echo "    2) Vertical (rotated 90° clockwise)"
+    echo "    3) Vertical (rotated 90° counter-clockwise)"
+    echo "    4) Upside-down (180°)"
+    while true; do
+      read -rp "  Choice [1-4]: " ORI_CHOICE
+      case "$ORI_CHOICE" in
+        1) MON_TRANSFORM[$i]="0"; break ;;
+        2) MON_TRANSFORM[$i]="1"; break ;;
+        3) MON_TRANSFORM[$i]="3"; break ;;
+        4) MON_TRANSFORM[$i]="2"; break ;;
+        *) echo "  Invalid choice, try again." ;;
+      esac
+    done
+  done
+
+  # --- Generate hyprland monitor config ---
+  HYPR_CONF_DIR="$HOME/.config/hypr"
+  MONITORS_CONF="$HYPR_CONF_DIR/hyprland/monitors.conf"
+  mkdir -p "$HYPR_CONF_DIR/hyprland"
+
+  echo "==> Writing monitor config to $MONITORS_CONF ..."
+  : > "$MONITORS_CONF"
+
+  get_res() { echo "${MONITOR_RES[$1]:-preferred}"; }
+  get_hz()  { echo "${MONITOR_HZ[$1]:-0}"; }
+
+  PRI_RES=$(get_res "$PRIMARY_IDX")
+  PRI_HZ=$(get_hz   "$PRIMARY_IDX")
+  PRI_W=$(echo "$PRI_RES" | cut -dx -f1)
+  PRI_H=$(echo "$PRI_RES" | cut -dx -f2)
+  PRI_TRANSFORM="${MON_TRANSFORM[$PRIMARY_IDX]}"
+
+  echo -e "## Main Monitor" >> "$MONITORS_CONF"
+  echo "monitor=${MONITOR_NAMES[$PRIMARY_IDX]}, ${PRI_RES}@${PRI_HZ}, 0x0, 1, transform, $PRI_TRANSFORM" >> "$MONITORS_CONF"
+
+  for i in "${!MONITOR_NAMES[@]}"; do
+    [[ "$i" -eq "$PRIMARY_IDX" ]] && continue
+
+    MON="${MONITOR_NAMES[$i]}"
+    MON_RES=$(get_res "$i")
+    MON_HZ=$(get_hz   "$i")
+    MON_W=$(echo "$MON_RES" | cut -dx -f1)
+    MON_H=$(echo "$MON_RES" | cut -dx -f2)
+    TRANSFORM="${MON_TRANSFORM[$i]}"
+    SIDE="${MON_POSITION[$i]}"
+    ALIGN="${MON_ALIGN[$i]}"
+
+    if [[ "$TRANSFORM" == "1" || "$TRANSFORM" == "3" ]]; then
+      EFF_W=$MON_H; EFF_H=$MON_W
+      EFF_PRI_W=$PRI_H; EFF_PRI_H=$PRI_W
+    else
+      EFF_W=$MON_W; EFF_H=$MON_H
+      EFF_PRI_W=$PRI_W; EFF_PRI_H=$PRI_H
+    fi
+
+    case "$SIDE" in
+      left)
+        POS_X=$(( -EFF_W ))
+        case "$ALIGN" in
+          top)    POS_Y=0 ;;
+          center) POS_Y=$(( (EFF_PRI_H - EFF_H) / 2 )) ;;
+          bottom) POS_Y=$(( EFF_PRI_H - EFF_H )) ;;
+        esac
+        ;;
+      right)
+        POS_X=$EFF_PRI_W
+        case "$ALIGN" in
+          top)    POS_Y=0 ;;
+          center) POS_Y=$(( (EFF_PRI_H - EFF_H) / 2 )) ;;
+          bottom) POS_Y=$(( EFF_PRI_H - EFF_H )) ;;
+        esac
+        ;;
+      top)
+        POS_Y=$(( -EFF_H ))
+        case "$ALIGN" in
+          left)   POS_X=0 ;;
+          center) POS_X=$(( (EFF_PRI_W - EFF_W) / 2 )) ;;
+          right)  POS_X=$(( EFF_PRI_W - EFF_W )) ;;
+        esac
+        ;;
+      bottom)
+        POS_Y=$EFF_PRI_H
+        case "$ALIGN" in
+          left)   POS_X=0 ;;
+          center) POS_X=$(( (EFF_PRI_W - EFF_W) / 2 )) ;;
+          right)  POS_X=$(( EFF_PRI_W - EFF_W )) ;;
+        esac
+        ;;
+    esac
+
+    echo -e "\n## Monitor $((i+1))" >> "$MONITORS_CONF"
+    echo "monitor=$MON, ${MON_RES}@${MON_HZ}, ${POS_X}x${POS_Y}, 1, transform, $TRANSFORM" >> "$MONITORS_CONF"
+  done
+
+  echo ""
+  echo "==> Generated $MONITORS_CONF:"
+  cat "$MONITORS_CONF"
+  echo ""
+
+  HYPRLAND_CONF="$HYPR_CONF_DIR/hyprland.conf"
+  if [ -f "$HYPRLAND_CONF" ]; then
+    grep -q "monitors.conf" "$HYPRLAND_CONF" || \
+      sed -i '1s|^|source = ~/.config/hypr/hyprland/monitors.conf\n|' "$HYPRLAND_CONF"
+  fi
+fi
+
+# -----------------------------
 # Hyprlock username
 # -----------------------------
 HYPRLOCK_CONF="$HOME/.config/hypr/hyprlock.conf"
@@ -340,6 +574,21 @@ rm -rf Colloid-icon-theme/
 mkdir -p ~/Videos ~/Documents ~/Pictures ~/Downloads ~/Desktop
 echo
 echo "✅ Setup complete."
+
+MONITOR_FPS=60
+
+if command -v hyprctl &> /dev/null && command -v jq &> /dev/null; then
+    detected_fps=$(hyprctl monitors -j | jq -r '.[] | select(.focused==true) | .refreshRate' | cut -d'.' -f1)
+    if [[ -n "$detected_fps" && "$detected_fps" != "null" ]]; then
+        MONITOR_FPS="$detected_fps"
+    fi
+fi
+
+TRANSITION_FPS="$MONITOR_FPS"
+
+awww img "$HOME/n4zl-dotfiles/wallpaper.jpg" --transition-type wipe --transition-angle 120 --transition-duration 2 --transition-fps "$TRANSITION_FPS"
+matugen image "$HOME/n4zl-dotfiles/wallpaper.jpg"  --type scheme-tonal-spot --source-color-index 0 -m dark
+~/.config/rofi/scripts/reload_apps.sh
 
 # -----------------------------
 # Reboot confirmation
