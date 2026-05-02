@@ -396,6 +396,24 @@ write_config() {
     echo -e "${DIM}"
     cat "$MONITORS_CONF"
     echo -e "${RESET}"
+    # Apply current wallpaper to the last added secondary monitor only
+    if [[ "$MONITOR_COUNT" -gt 1 ]]; then
+        WALLPAPER=$(cat "$HOME/.config/rofi/current_wallpaper" 2>/dev/null)
+        if [ -n "$WALLPAPER" ] && [ -f "$WALLPAPER" ]; then
+            LAST_SEC_IDX=""
+            for i in "${!MONITOR_NAMES[@]}"; do
+                [[ "$i" -eq "$PRIMARY_IDX" ]] && continue
+                LAST_SEC_IDX=$i
+            done
+            if [ -n "$LAST_SEC_IDX" ]; then
+                awww img --outputs "${MONITOR_NAMES[$LAST_SEC_IDX]}" "$WALLPAPER" \
+                    --transition-type wipe \
+                    --transition-angle 120 \
+                    --transition-duration 2 &>/dev/null || true
+                success "Wallpaper applied to ${MONITOR_NAMES[$LAST_SEC_IDX]}."
+            fi
+        fi
+    fi
     read -rp "  Press Enter to close..."
 }
 

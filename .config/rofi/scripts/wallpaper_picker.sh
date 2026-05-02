@@ -77,7 +77,7 @@ WALLPAPER="${wall_dir}/${wall_selection}"
 # Set wallpaper with swww
 # ----------------------------------------------------------------------------
 
-swww img "$WALLPAPER" \
+awww img "$WALLPAPER" \
     --transition-type "$TRANSITION_TYPE" \
     --transition-duration "$TRANSITION_DURATION" \
     --transition-angle "$TRANSITION_ANGLE" \
