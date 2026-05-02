@@ -234,6 +234,27 @@ else
 fi
 
 # -----------------------------
+# Install yay (AUR helper)
+# -----------------------------
+if ! command -v yay &>/dev/null; then
+  echo "==> Installing yay..."
+  
+  TMP_DIR=$(mktemp -d)
+  git clone https://aur.archlinux.org/yay.git "$TMP_DIR/yay"
+  cd "$TMP_DIR/yay"
+  makepkg -si --noconfirm
+  cd ~
+
+  rm -rf "$TMP_DIR"
+
+  # Also remove any yay folder left in home
+  rm -rf "$HOME/yay"
+else
+  echo "==> yay already installed, skipping."
+fi
+
+
+# -----------------------------
 # AUR packages
 # -----------------------------
 yay_install \
