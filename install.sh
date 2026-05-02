@@ -3,6 +3,8 @@
 # mesa lib32-mesa -media-driver vulkan-intel lib32-vulkan-intel
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # -----------------------------
 # Helpers
 # -----------------------------
@@ -14,7 +16,9 @@ yay_install() {
   yay -S --needed --noconfirm "$@"
 }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+is_installed() {
+  pacman -Q "$1" &>/dev/null
+}
 
 # -----------------------------
 # Enable multilib
@@ -103,12 +107,16 @@ pacman_install \
 # -----------------------------
 # VirtualBox
 # -----------------------------
-read -rp "Install VirtualBox? [y/N]: " VBOX_CONFIRM
-if [[ "$VBOX_CONFIRM" =~ ^[Yy]$ ]]; then
-  sudo pacman -S --needed --noconfirm virtualbox virtualbox-host-modules-arch
-  sudo modprobe vboxdrv
-  sudo modprobe vboxnetflt
-  sudo modprobe vboxnetadp
+if is_installed virtualbox; then
+  echo "==> VirtualBox already installed, skipping."
+else
+  read -rp "Install VirtualBox? [y/N]: " VBOX_CONFIRM
+  if [[ "$VBOX_CONFIRM" =~ ^[Yy]$ ]]; then
+    sudo pacman -S --needed --noconfirm virtualbox virtualbox-host-modules-arch
+    sudo modprobe vboxdrv
+    sudo modprobe vboxnetflt
+    sudo modprobe vboxnetadp
+  fi
 fi
 
 # -----------------------------
@@ -160,27 +168,35 @@ sudo grep -q "^user *= *\"$USERNAME\"" "$GREETD_CONFIG" || \
 # -----------------------------
 # Editor setup
 # -----------------------------
-echo "Select editor to install:"
-echo "1) NvChad (neovim)"
-echo "2) nano"
-echo "3) Skip"
-read -rp "Choice [1/2/3]: " EDITOR_CHOICE
+if is_installed neovim; then
+  echo "==> Neovim already installed, skipping editor setup."
+elif is_installed nano; then
+  echo "==> Nano already installed, skipping editor setup."
+else
+  echo "Select editor to install:"
+  echo "1) NvChad (neovim)"
+  echo "2) nano"
+  echo "3) Skip"
+  read -rp "Choice [1/2/3]: " EDITOR_CHOICE
 
-if [[ "$EDITOR_CHOICE" == "1" ]]; then
-  sudo pacman -S --needed --noconfirm neovim
-  NVIM_DIR="$HOME/.config/nvim"
-  NVCHAD_MARKER="$NVIM_DIR/lua/core/init.lua"
-  if [ ! -f "$NVCHAD_MARKER" ]; then
-    echo "==> Installing NvChad..."
-    git clone https://github.com/NvChad/starter "$NVIM_DIR" || true
-  else
-    echo "==> NvChad already installed, skipping clone"
-  fi
-  cp -f "$HOME/nvim_plugins/*" "$NVIM_DIR/lua/plugins/"
-  nvim
-  INIT_LUA="$NVIM_DIR/init.lua"
-  if ! grep -q "Load matugen colors" "$INIT_LUA" 2>/dev/null; then
-    cat >> "$INIT_LUA" <<'EOF'
+  if [[ "$EDITOR_CHOICE" == "1" ]]; then
+    sudo pacman -S --needed --noconfirm neovim
+    NVIM_DIR="$HOME/.config/nvim"
+    NVCHAD_MARKER="$NVIM_DIR/lua/core/init.lua"
+
+    if [ ! -f "$NVCHAD_MARKER" ]; then
+      echo "==> Installing NvChad..."
+      git clone https://github.com/NvChad/starter "$NVIM_DIR" || true
+    else
+      echo "==> NvChad already installed, skipping clone"
+    fi
+
+    cp -f "$HOME/n4zl-dotfiles/nvim_plugins/"* "$NVIM_DIR/lua/plugins/" 2>/dev/null || true
+    nvim
+
+    INIT_LUA="$NVIM_DIR/init.lua"
+    if ! grep -q "Load matugen colors" "$INIT_LUA" 2>/dev/null; then
+      cat >> "$INIT_LUA" <<'EOF'
 -- Load matugen colors after startup
 vim.schedule(function()
   require "mappings"
@@ -190,14 +206,37 @@ vim.schedule(function()
   end
 end)
 EOF
+    fi
+
+    COLORS_LUA="$NVIM_DIR/colors.lua"
+    [ -f "$COLORS_LUA" ] || touch "$COLORS_LUA"
+
+  elif [[ "$EDITOR_CHOICE" == "2" ]]; then
+    echo "==> Installing nano..."
+    sudo pacman -S --needed --noconfirm nano
+  else
+    echo "==> Skipping editor install."
   fi
-  COLORS_LUA="$NVIM_DIR/colors.lua"
-  [ -f "$COLORS_LUA" ] || touch "$COLORS_LUA"
-elif [[ "$EDITOR_CHOICE" == "2" ]]; then
-  echo "==> Installing nano..."
-  sudo pacman -S --needed --noconfirm nano
+fi
+
+# -----------------------------
+# Install yay (AUR helper)
+# -----------------------------
+if ! command -v yay &>/dev/null; then
+  echo "==> Installing yay..."
+  
+  TMP_DIR=$(mktemp -d)
+  git clone https://aur.archlinux.org/yay.git "$TMP_DIR/yay"
+  cd "$TMP_DIR/yay"
+  makepkg -si --noconfirm
+  cd ~
+
+  rm -rf "$TMP_DIR"
+
+  # Also remove any yay folder left in home
+  rm -rf "$HOME/yay"
 else
-  echo "==> Skipping editor install."
+  echo "==> yay already installed, skipping."
 fi
 
 # -----------------------------
@@ -229,32 +268,46 @@ yay_install \
 # -----------------------------
 # Browser
 # -----------------------------
-echo "Select browser to install:"
-echo "1) Brave"
-echo "2) Zen Browser"
-echo "3) Firefox"
-echo "4) Google Chrome"
-echo "5) Skip"
-read -rp "Choice [1/2/3/4/5]: " BROWSER_CHOICE
+for browser in firefox brave-bin google-chrome zen-browser-bin; do
+  if is_installed "$browser"; then
+    echo "==> Browser already installed ($browser), skipping."
+    BROWSER_FOUND=1
+    break
+  fi
+done
 
-case "$BROWSER_CHOICE" in
-  1) yay -S --needed --noconfirm brave-bin ;;
-  2) yay -S --needed --noconfirm zen-browser-bin ;;
-  3) sudo pacman -S --needed --noconfirm firefox ;;
-  4) yay -S --needed --noconfirm google-chrome ;;
-  *) echo "==> Skipping browser install." ;;
-esac
+if [[ -z "$BROWSER_FOUND" ]]; then
+  echo "Select browser to install:"
+  echo "1) Brave"
+  echo "2) Zen Browser"
+  echo "3) Firefox"
+  echo "4) Google Chrome"
+  echo "5) Skip"
+  read -rp "Choice [1/2/3/4/5]: " BROWSER_CHOICE
+
+  case "$BROWSER_CHOICE" in
+    1) yay -S --needed --noconfirm brave-bin ;;
+    2) yay -S --needed --noconfirm zen-browser-bin ;;
+    3) sudo pacman -S --needed --noconfirm firefox ;;
+    4) yay -S --needed --noconfirm google-chrome ;;
+    *) echo "==> Skipping browser install." ;;
+  esac
+fi
 
 cd /usr/share/icons/
 sudo rm -rf Bibata-Modern-Amber Bibata-Modern-Amber-Right Bibata-Modern-Classic-Right Bibata-Modern-Ice Bibata-Modern-Ice-Right Bibata-Original-Amber Bibata-Original-Amber Bibata-Original-Amber-Right Bibata-Original-Classic Bibata-Original-Classic-Right Bibata-Original-Ice Bibata-Original-Ice-Right
-cd ~/
+cd "$SCRIPT_DIR"
 
 # -----------------------------
-# Flatpak
+# Flatpak (Roblox)
 # -----------------------------
-read -rp "Install Roblox (Sober)? [y/N]: " ROBLOX_CONFIRM
-if [[ "$ROBLOX_CONFIRM" =~ ^[Yy]$ ]]; then
-  flatpak install flathub org.vinegarhq.Sober || true
+if flatpak list | grep -q org.vinegarhq.Sober; then
+  echo "==> Sober already installed, skipping."
+else
+  read -rp "Install Roblox (Sober)? [y/N]: " ROBLOX_CONFIRM
+  if [[ "$ROBLOX_CONFIRM" =~ ^[Yy]$ ]]; then
+    flatpak install flathub org.vinegarhq.Sober || true
+  fi
 fi
 
 # -----------------------------
@@ -266,9 +319,23 @@ xdg-mime default org.gnome.Nautilus.desktop inode/directory
 # -----------------------------
 # Deploy dotfiles (force overwrite)
 # -----------------------------
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
-curl -sS https://starship.rs/install.sh | sh
-if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+  echo "==> Installing Oh My Zsh..."
+  RUNZSH=no CHSH=no KEEP_ZSHRC=yes \
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
+else
+  echo "==> Oh My Zsh already installed, skipping."
+fi
+
+if ! command -v starship &>/dev/null; then
+  echo "==> Installing starship..."
+  curl -sS https://starship.rs/install.sh | sh -s -- -y
+else
+  echo "==> starship already installed, skipping."
+fi
+
+ZSH_CUSTOM_DIR="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
+if [ ! -d "$ZSH_CUSTOM_DIR/plugins/zsh-autosuggestions" ]; then
   git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
 fi
 
@@ -288,257 +355,10 @@ if [ -f "$SCRIPT_DIR/.zshrc" ]; then
 fi
 
 # -----------------------------
-# Monitor configuration
-# -----------------------------
-echo "==> Detecting monitors..."
-
-MONITORS=()
-MONITOR_INFO=()
-
-if command -v hyprctl &>/dev/null && hyprctl monitors &>/dev/null 2>&1; then
-  mapfile -t RAW < <(hyprctl monitors -j 2>/dev/null)
-  mapfile -t MONITOR_NAMES < <(echo "${RAW[@]}" | jq -r '.[].name')
-  mapfile -t MONITOR_RES   < <(echo "${RAW[@]}" | jq -r '.[].width|tostring' | paste - <(echo "${RAW[@]}" | jq -r '.[].height|tostring') | sed 's/\t/x/')
-  mapfile -t MONITOR_HZ    < <(echo "${RAW[@]}" | jq -r '.[].refreshRate')
-  mapfile -t MONITOR_MAKE  < <(echo "${RAW[@]}" | jq -r '.[].make // "Unknown"')
-  mapfile -t MONITOR_MODEL < <(echo "${RAW[@]}" | jq -r '.[].model // "Unknown"')
-else
-  if command -v kmsprint &>/dev/null; then
-    mapfile -t MONITOR_NAMES < <(kmsprint | grep -oP '(?<=Connector )\S+')
-  else
-    mapfile -t MONITOR_NAMES < <(ls /sys/class/drm/ | grep -v render | grep -v card[0-9]$ | sed 's/card[0-9]-//')
-  fi
-  MONITOR_RES=()
-  MONITOR_HZ=()
-  MONITOR_MAKE=()
-  MONITOR_MODEL=()
-  for m in "${MONITOR_NAMES[@]}"; do
-    MONITOR_RES+=("unknown")
-    MONITOR_HZ+=("unknown")
-    MONITOR_MAKE+=("unknown")
-    MONITOR_MODEL+=("unknown")
-  done
-fi
-
-MONITOR_COUNT=${#MONITOR_NAMES[@]}
-
-if [[ "$MONITOR_COUNT" -eq 0 ]]; then
-  echo "==> No monitors detected, skipping monitor configuration."
-else
-  echo ""
-  echo "==> Detected monitors:"
-  for i in "${!MONITOR_NAMES[@]}"; do
-    echo "  [$((i+1))] ${MONITOR_NAMES[$i]} — ${MONITOR_MAKE[$i]} ${MONITOR_MODEL[$i]} — ${MONITOR_RES[$i]} @ ${MONITOR_HZ[$i]}Hz"
-  done
-  echo ""
-
-  # --- Primary monitor ---
-  PRIMARY_IDX=0
-  if [[ "$MONITOR_COUNT" -gt 1 ]]; then
-    while true; do
-      read -rp "Select primary monitor [1-${MONITOR_COUNT}]: " PRIMARY_CHOICE
-      if [[ "$PRIMARY_CHOICE" =~ ^[0-9]+$ ]] && (( PRIMARY_CHOICE >= 1 && PRIMARY_CHOICE <= MONITOR_COUNT )); then
-        PRIMARY_IDX=$(( PRIMARY_CHOICE - 1 ))
-        break
-      fi
-      echo "  Invalid choice, try again."
-    done
-  else
-    echo "==> Only one monitor detected, setting it as primary."
-  fi
-  PRIMARY_MON="${MONITOR_NAMES[$PRIMARY_IDX]}"
-  echo "==> Primary monitor: $PRIMARY_MON"
-
-  # --- Per-monitor layout configuration ---
-  declare -A MON_POSITION
-  declare -A MON_ALIGN
-  declare -A MON_TRANSFORM
-
-  for i in "${!MONITOR_NAMES[@]}"; do
-    MON="${MONITOR_NAMES[$i]}"
-    [[ "$i" -eq "$PRIMARY_IDX" ]] && LABEL="(primary)" || LABEL=""
-    echo ""
-    echo "--- Configuring monitor: $MON $LABEL ---"
-
-    if [[ "$i" -ne "$PRIMARY_IDX" ]]; then
-      echo "  Where should $MON be placed relative to the primary monitor?"
-      echo "    1) Left"
-      echo "    2) Right"
-      echo "    3) Above (top)"
-      echo "    4) Below (bottom)"
-      while true; do
-        read -rp "  Choice [1-4]: " SIDE_CHOICE
-        case "$SIDE_CHOICE" in
-          1) MON_POSITION[$i]="left"  ; break ;;
-          2) MON_POSITION[$i]="right" ; break ;;
-          3) MON_POSITION[$i]="top"   ; break ;;
-          4) MON_POSITION[$i]="bottom"; break ;;
-          *) echo "  Invalid choice, try again." ;;
-        esac
-      done
-
-      SIDE="${MON_POSITION[$i]}"
-      if [[ "$SIDE" == "left" || "$SIDE" == "right" ]]; then
-        echo "  How should $MON be vertically aligned relative to the primary?"
-        echo "    1) Top-aligned"
-        echo "    2) Center-aligned"
-        echo "    3) Bottom-aligned"
-        while true; do
-          read -rp "  Choice [1-3]: " ALIGN_CHOICE
-          case "$ALIGN_CHOICE" in
-            1) MON_ALIGN[$i]="top"   ; break ;;
-            2) MON_ALIGN[$i]="center"; break ;;
-            3) MON_ALIGN[$i]="bottom"; break ;;
-            *) echo "  Invalid choice, try again." ;;
-          esac
-        done
-      else
-        echo "  How should $MON be horizontally aligned relative to the primary?"
-        echo "    1) Left-aligned"
-        echo "    2) Center-aligned"
-        echo "    3) Right-aligned"
-        while true; do
-          read -rp "  Choice [1-3]: " ALIGN_CHOICE
-          case "$ALIGN_CHOICE" in
-            1) MON_ALIGN[$i]="left"  ; break ;;
-            2) MON_ALIGN[$i]="center"; break ;;
-            3) MON_ALIGN[$i]="right" ; break ;;
-            *) echo "  Invalid choice, try again." ;;
-          esac
-        done
-      fi
-    else
-      MON_POSITION[$i]="primary"
-      MON_ALIGN[$i]="none"
-    fi
-
-    echo "  Orientation for $MON:"
-    echo "    1) Horizontal (normal)"
-    echo "    2) Vertical (rotated 90° clockwise)"
-    echo "    3) Vertical (rotated 90° counter-clockwise)"
-    echo "    4) Upside-down (180°)"
-    while true; do
-      read -rp "  Choice [1-4]: " ORI_CHOICE
-      case "$ORI_CHOICE" in
-        1) MON_TRANSFORM[$i]="0"; break ;;
-        2) MON_TRANSFORM[$i]="1"; break ;;
-        3) MON_TRANSFORM[$i]="3"; break ;;
-        4) MON_TRANSFORM[$i]="2"; break ;;
-        *) echo "  Invalid choice, try again." ;;
-      esac
-    done
-  done
-
-  # --- Generate hyprland monitor config ---
-  HYPR_CONF_DIR="$HOME/.config/hypr"
-  MONITORS_CONF="$HYPR_CONF_DIR/hyprland/monitors.conf"
-  mkdir -p "$HYPR_CONF_DIR/hyprland"
-
-  echo "==> Writing monitor config to $MONITORS_CONF ..."
-  : > "$MONITORS_CONF"
-
-  get_res() { echo "${MONITOR_RES[$1]:-preferred}"; }
-  get_hz()  { echo "${MONITOR_HZ[$1]:-0}"; }
-
-  PRI_RES=$(get_res "$PRIMARY_IDX")
-  PRI_HZ=$(get_hz   "$PRIMARY_IDX")
-  PRI_W=$(echo "$PRI_RES" | cut -dx -f1)
-  PRI_H=$(echo "$PRI_RES" | cut -dx -f2)
-  PRI_TRANSFORM="${MON_TRANSFORM[$PRIMARY_IDX]}"
-
-  echo -e "## Main Monitor" >> "$MONITORS_CONF"
-  echo "monitor=${MONITOR_NAMES[$PRIMARY_IDX]}, ${PRI_RES}@${PRI_HZ}, 0x0, 1, transform, $PRI_TRANSFORM" >> "$MONITORS_CONF"
-
-  for i in "${!MONITOR_NAMES[@]}"; do
-    [[ "$i" -eq "$PRIMARY_IDX" ]] && continue
-
-    MON="${MONITOR_NAMES[$i]}"
-    MON_RES=$(get_res "$i")
-    MON_HZ=$(get_hz   "$i")
-    MON_W=$(echo "$MON_RES" | cut -dx -f1)
-    MON_H=$(echo "$MON_RES" | cut -dx -f2)
-    TRANSFORM="${MON_TRANSFORM[$i]}"
-    SIDE="${MON_POSITION[$i]}"
-    ALIGN="${MON_ALIGN[$i]}"
-
-    if [[ "$TRANSFORM" == "1" || "$TRANSFORM" == "3" ]]; then
-      EFF_W=$MON_H; EFF_H=$MON_W
-      EFF_PRI_W=$PRI_H; EFF_PRI_H=$PRI_W
-    else
-      EFF_W=$MON_W; EFF_H=$MON_H
-      EFF_PRI_W=$PRI_W; EFF_PRI_H=$PRI_H
-    fi
-
-    case "$SIDE" in
-      left)
-        POS_X=$(( -EFF_W ))
-        case "$ALIGN" in
-          top)    POS_Y=0 ;;
-          center) POS_Y=$(( (EFF_PRI_H - EFF_H) / 2 )) ;;
-          bottom) POS_Y=$(( EFF_PRI_H - EFF_H )) ;;
-        esac
-        ;;
-      right)
-        POS_X=$EFF_PRI_W
-        case "$ALIGN" in
-          top)    POS_Y=0 ;;
-          center) POS_Y=$(( (EFF_PRI_H - EFF_H) / 2 )) ;;
-          bottom) POS_Y=$(( EFF_PRI_H - EFF_H )) ;;
-        esac
-        ;;
-      top)
-        POS_Y=$(( -EFF_H ))
-        case "$ALIGN" in
-          left)   POS_X=0 ;;
-          center) POS_X=$(( (EFF_PRI_W - EFF_W) / 2 )) ;;
-          right)  POS_X=$(( EFF_PRI_W - EFF_W )) ;;
-        esac
-        ;;
-      bottom)
-        POS_Y=$EFF_PRI_H
-        case "$ALIGN" in
-          left)   POS_X=0 ;;
-          center) POS_X=$(( (EFF_PRI_W - EFF_W) / 2 )) ;;
-          right)  POS_X=$(( EFF_PRI_W - EFF_W )) ;;
-        esac
-        ;;
-    esac
-
-    echo -e "\n## Monitor $((i+1))" >> "$MONITORS_CONF"
-    echo "monitor=$MON, ${MON_RES}@${MON_HZ}, ${POS_X}x${POS_Y}, 1, transform, $TRANSFORM" >> "$MONITORS_CONF"
-  done
-
-  echo ""
-  echo "==> Generated $MONITORS_CONF:"
-  cat "$MONITORS_CONF"
-  echo ""
-
-  HYPRLAND_CONF="$HYPR_CONF_DIR/hyprland.conf"
-  if [ -f "$HYPRLAND_CONF" ]; then
-    grep -q "monitors.conf" "$HYPRLAND_CONF" || \
-      sed -i '1s|^|source = ~/.config/hypr/hyprland/monitors.conf\n|' "$HYPRLAND_CONF"
-  fi
-fi
-# -----------------------------
 # Diagnose
 # -----------------------------
 if [ -f "$SCRIPT_DIR/diagnose.sh" ]; then
   bash "$SCRIPT_DIR/diagnose.sh"
-fi
-
-# -----------------------------
-# Hyprlock username
-# -----------------------------
-HYPRLOCK_CONF="$HOME/.config/hypr/hyprlock.conf"
-if [ -f "$HYPRLOCK_CONF" ]; then
-  echo "Hyprlock display name:"
-  echo "1) Keep default (\$USER)"
-  echo "2) Set custom name"
-  read -rp "Choice [1/2]: " HYPRLOCK_CHOICE
-  if [[ "$HYPRLOCK_CHOICE" == "2" ]]; then
-    read -rp "Enter display name: " HYPRLOCK_NAME
-    sed -i "s/text = \$USER/text = $HYPRLOCK_NAME/" "$HYPRLOCK_CONF"
-  fi
 fi
 
 # -----------------------------
@@ -564,30 +384,66 @@ sudo timedatectl set-ntp true
 
 timedatectl status | grep -E "Time zone|System clock synchronized|NTP service"
 
-cd ~/
-git clone https://github.com/vinceliuice/Colloid-icon-theme.git; cd Colloid-icon-theme/
-./install.sh -s default
-cd ~/
-rm -rf Colloid-icon-theme/
-
-mkdir -p ~/Videos ~/Documents ~/Pictures ~/Downloads ~/Desktop
-echo
-echo "✅ Setup complete."
-
-MONITOR_FPS=60
-
-if command -v hyprctl &> /dev/null && command -v jq &> /dev/null; then
-    detected_fps=$(hyprctl monitors -j | jq -r '.[] | select(.focused==true) | .refreshRate' | cut -d'.' -f1)
-    if [[ -n "$detected_fps" && "$detected_fps" != "null" ]]; then
-        MONITOR_FPS="$detected_fps"
-    fi
+if [ ! -d "/usr/share/icons/Colloid" ]; then
+  echo "==> Installing Colloid icon theme..."
+  TMP_DIR=$(mktemp -d)
+  git clone https://github.com/vinceliuice/Colloid-icon-theme.git "$TMP_DIR/colloid"
+  cd "$TMP_DIR/colloid"
+  ./install.sh -s default
+  cd ~
+  rm -rf "$TMP_DIR"
+else
+  echo "==> Colloid icon theme already installed, skipping."
 fi
 
-TRANSITION_FPS="$MONITOR_FPS"
+mkdir -p ~/Videos ~/Documents ~/Pictures/Screenshots/ ~/Downloads ~/Desktop
+echo
 
-awww img "$HOME/n4zl-dotfiles/wallpaper.jpg" --transition-type wipe --transition-angle 120 --transition-duration 2 --transition-fps "$TRANSITION_FPS"
-matugen image "$HOME/n4zl-dotfiles/wallpaper.jpg"  --type scheme-tonal-spot --source-color-index 0 -m dark
-~/.config/rofi/scripts/reload_apps.sh
+# -----------------------------
+# Detect monitor FPS (fallback: 60)
+# -----------------------------
+MONITOR_FPS=60
+
+if command -v hyprctl &>/dev/null && command -v jq &>/dev/null; then
+  MONITOR_FPS=$(hyprctl monitors -j | jq -r '
+    map(select(.focused == true).refreshRate // empty)[0] // 60
+  ' | cut -d'.' -f1)
+fi
+
+# -----------------------------
+# Apply wallpaper + theme
+# -----------------------------
+awww img "$HOME/n4zl-dotfiles/wallpaper.jpg" \
+  --transition-type wipe \
+  --transition-angle 120 \
+  --transition-duration 2 \
+  --transition-fps "$MONITOR_FPS"
+
+matugen image "$HOME/n4zl-dotfiles/wallpaper.jpg" \
+  --type scheme-tonal-spot \
+  --source-color-index 0 \
+  -m dark
+
+~/.config/rofi/scripts/reload_apps.sh & disown
+
+# -----------------------------
+# Change default shell to zsh if not already
+# -----------------------------
+CURRENT_SHELL=$(getent passwd "$USERNAME" | cut -d: -f7)
+
+if [[ "$CURRENT_SHELL" == "$(which zsh)" ]]; then
+    echo "==> Default shell is already zsh, skipping."
+else
+    echo "==> Setting zsh as default shell for user $USERNAME..."
+    chsh -s "$(which zsh)" "$USERNAME"
+fi
+
+EXECS_CONF="$HOME/.config/hypr/hyprland/execs.conf"
+
+# Add both scripts to run on next boot
+echo "exec-once = sleep 3 && ~/n4zl-dotfiles/scripts/monitors.sh && ~/n4zl-dotfiles/scripts/customization.sh" >> "$EXECS_CONF"
+
+echo "✅ Setup complete."
 
 # -----------------------------
 # Reboot confirmation
