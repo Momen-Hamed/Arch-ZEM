@@ -168,7 +168,48 @@ sudo grep -q "^user *= *\"$USERNAME\"" "$GREETD_CONFIG" || \
 # -----------------------------
 # Editor setup
 # -----------------------------
-if is_installed neovim || is_installed nano || is_installed vim; then
+setup_nvim_extras() {
+  NVIM_DIR="$HOME/.config/nvim"
+
+  if [ ! -f "$NVIM_DIR/init.lua" ]; then
+    echo "==> Installing NvChad..."
+    git clone https://github.com/NvChad/starter "$NVIM_DIR" || true
+  else
+    echo "==> NvChad already installed, skipping clone"
+  fi
+
+  echo "==> Syncing nvim plugins..."
+  cp -f "$SCRIPT_DIR"/nvim_plugins/* "$NVIM_DIR/lua/plugins/" 2>/dev/null || true
+
+  INIT_LUA="$NVIM_DIR/init.lua"
+  if ! grep -q "Load matugen colors" "$INIT_LUA" 2>/dev/null; then
+    cat >> "$INIT_LUA" <<'EOF'
+-- Load matugen colors after startup
+vim.schedule(function()
+  local colors = vim.fn.stdpath("config") .. "/colors.lua"
+  if vim.fn.filereadable(colors) == 1 then
+    local ok, err = pcall(dofile, colors)
+    if not ok then
+      vim.notify("colors.lua: " .. err, vim.log.levels.WARN)
+    end
+  end
+end)
+EOF
+  fi
+
+  COLORS_LUA="$NVIM_DIR/colors.lua"
+  [ -f "$COLORS_LUA" ] || touch "$COLORS_LUA"
+  echo "" > "$COLORS_LUA"
+
+  echo "==> Installing nvim plugins in background..."
+  nohup nvim --headless "+Lazy sync" +qa > /tmp/nvim-lazy.log 2>&1 &
+  echo "==> Plugin sync running in background, check /tmp/nvim-lazy.log for details."
+}
+
+if is_installed neovim; then
+  echo "==> Neovim already installed, checking plugins..."
+  setup_nvim_extras
+elif is_installed nano || is_installed vim; then
   echo "==> Editor already installed, skipping editor setup."
 else
   echo "Select editor to install:"
@@ -180,31 +221,7 @@ else
 
   if [[ "$EDITOR_CHOICE" == "1" ]]; then
     sudo pacman -S --needed --noconfirm neovim
-    NVIM_DIR="$HOME/.config/nvim"
-    NVCHAD_MARKER="$NVIM_DIR/lua/core/init.lua"
-    if [ ! -f "$NVCHAD_MARKER" ]; then
-      echo "==> Installing NvChad..."
-      git clone https://github.com/NvChad/starter "$NVIM_DIR" || true
-    else
-      echo "==> NvChad already installed, skipping clone"
-    fi
-    cp -f "$SCRIPT_DIR/nvim_plugins/*" "$NVIM_DIR/lua/plugins/" 2>/dev/null || true
-    nvim
-    INIT_LUA="$NVIM_DIR/init.lua"
-    if ! grep -q "Load matugen colors" "$INIT_LUA" 2>/dev/null; then
-      cat >> "$INIT_LUA" <<'EOF'
--- Load matugen colors after startup
-vim.schedule(function()
-  require "mappings"
-  local colors = vim.fn.stdpath("config") .. "/colors.lua"
-  if vim.fn.filereadable(colors) == 1 then
-    dofile(colors)
-  end
-end)
-EOF
-    fi
-    COLORS_LUA="$NVIM_DIR/colors.lua"
-    [ -f "$COLORS_LUA" ] || touch "$COLORS_LUA"
+    setup_nvim_extras
   elif [[ "$EDITOR_CHOICE" == "2" ]]; then
     echo "==> Installing nano..."
     sudo pacman -S --needed --noconfirm nano
@@ -214,26 +231,6 @@ EOF
   else
     echo "==> Skipping editor install."
   fi
-fi
-
-# -----------------------------
-# Install yay (AUR helper)
-# -----------------------------
-if ! command -v yay &>/dev/null; then
-  echo "==> Installing yay..."
-  
-  TMP_DIR=$(mktemp -d)
-  git clone https://aur.archlinux.org/yay.git "$TMP_DIR/yay"
-  cd "$TMP_DIR/yay"
-  makepkg -si --noconfirm
-  cd ~
-
-  rm -rf "$TMP_DIR"
-
-  # Also remove any yay folder left in home
-  rm -rf "$HOME/yay"
-else
-  echo "==> yay already installed, skipping."
 fi
 
 # -----------------------------
@@ -397,35 +394,6 @@ mkdir -p ~/Videos ~/Documents ~/Pictures/Screenshots/ ~/Downloads ~/Desktop
 echo
 
 # -----------------------------
-# Detect monitor FPS (fallback: 60)
-# -----------------------------
-MONITOR_FPS=60
-
-if command -v hyprctl &>/dev/null && command -v jq &>/dev/null; then
-  MONITOR_FPS=$(hyprctl monitors -j | jq -r '
-    map(select(.focused == true).refreshRate // empty)[0] // 60
-  ' | cut -d'.' -f1)
-fi
-
-# -----------------------------
-# Apply wallpaper + theme
-# -----------------------------
-WALL_DIR="$HOME/.config/rofi/current_wallpaper"
-
-awww img "$WALL_DIR" \
-  --transition-type wipe \
-  --transition-angle 120 \
-  --transition-duration 2 \
-  --transition-fps "$MONITOR_FPS"
-
-matugen image "$WALL_DIR" \
-  --type scheme-tonal-spot \
-  --source-color-index 0 \
-  -m dark
-
-~/.config/rofi/scripts/reload_apps.sh & disown
-
-# -----------------------------
 # Change default shell to zsh if not already
 # -----------------------------
 CURRENT_SHELL=$(getent passwd "$USERNAME" | cut -d: -f7)
@@ -442,7 +410,10 @@ EXECS_CONF="$HOME/.config/hypr/hyprland/execs.conf"
 # Add both scripts to run on next boot
 echo "exec-once = sleep 3 && ~/n4zl-dotfiles/scripts/monitors.sh && ~/n4zl-dotfiles/scripts/customization.sh" >> "$EXECS_CONF"
 
+echo "exec-once = sleep 1.5 && ~/n4zl-dotfiles/scripts/applying_default_wallpaper.sh" >> "$EXECS_CONF"
+
 echo "✅ Setup complete."
+
 
 # -----------------------------
 # Reboot confirmation
