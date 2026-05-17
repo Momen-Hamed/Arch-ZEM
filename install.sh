@@ -263,7 +263,6 @@ yay_install \
   heroic-games-launcher-bin \
   elecwhat-bin \
   ttf-symbola \
-  freedownloadmanager \
   visual-studio-code-bin \
   proton-ge-custom-bin \
   protonup-qt-bin \
