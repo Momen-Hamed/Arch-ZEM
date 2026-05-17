@@ -3,7 +3,7 @@
 # mesa lib32-mesa -media-driver vulkan-intel lib32-vulkan-intel
 set -e
 
-SCRIPT_DIR="$HOME/n4zl-dotfiles"
+SCRIPT_DIR="$HOME/Arch-Space-ZEM"
 
 # -----------------------------
 # Helpers
@@ -59,13 +59,13 @@ pacman_install \
   gnome-clocks gnome-text-editor \
   inter-font noto-fonts-emoji nerd-fonts noto-fonts-cjk \
   adw-gtk-theme ntfs-3g \
-  wine-mono wine-gecko winetricks zenity \
-  ffmpeg gamescope telegram-desktop \
+  zenity \
+  ffmpeg telegram-desktop \
   gst-plugins-{base,good,bad,ugly} \
   samba gnutls sdl2-compat \
   swaync \
   font-manager \
-  mangohud lib32-mangohud gamemode lib32-gamemode goverlay vulkan-icd-loader lib32-vulkan-icd-loader vulkan-tools steam \
+  vulkan-icd-loader lib32-vulkan-icd-loader vulkan-tools \
   discord \
   blueman \
   scrcpy wayvnc \
@@ -95,7 +95,6 @@ pacman_install \
   file-roller \
   gnome-calendar \
   gnome-weather \
-  vkd3d \
   sound-theme-freedesktop libcanberra libcanberra-pulse socat \
   gnome-system-monitor \
   timeshift \
@@ -103,6 +102,24 @@ pacman_install \
   bc \
   hyprpicker \
   qt6-5compat qt5-graphicaleffects
+
+# -----------------------------
+# Install yay (AUR helper)
+# -----------------------------
+if ! command -v yay &>/dev/null; then
+  echo "==> Installing yay..."
+  
+  TMP_DIR=$(mktemp -d)
+  git clone https://aur.archlinux.org/yay.git "$TMP_DIR/yay"
+  cd "$TMP_DIR/yay"
+  makepkg -si --noconfirm
+  cd ~
+
+  rm -rf "$TMP_DIR"
+  rm -rf "$HOME/yay"
+else
+  echo "==> yay already installed, skipping."
+fi
 
 # -----------------------------
 # VirtualBox
@@ -234,78 +251,112 @@ else
 fi
 
 # -----------------------------
-# Install yay (AUR helper)
-# -----------------------------
-if ! command -v yay &>/dev/null; then
-  echo "==> Installing yay..."
-  
-  TMP_DIR=$(mktemp -d)
-  git clone https://aur.archlinux.org/yay.git "$TMP_DIR/yay"
-  cd "$TMP_DIR/yay"
-  makepkg -si --noconfirm
-  cd ~
-
-  rm -rf "$TMP_DIR"
-
-  # Also remove any yay folder left in home
-  rm -rf "$HOME/yay"
-else
-  echo "==> yay already installed, skipping."
-fi
-
-
-# -----------------------------
 # AUR packages
 # -----------------------------
 yay_install \
   pavucontrol \
   bibata-cursor-theme-bin \
-  heroic-games-launcher-bin \
   elecwhat-bin \
   ttf-symbola \
   visual-studio-code-bin \
-  proton-ge-custom-bin \
-  protonup-qt-bin \
-  spotify \
   cmatrix-git \
   overskride-bin \
   nmgui-bin \
   network-manager-applet \
   ocean-sound-theme \
-  adwsteamgtk \
-  dxvk-bin \
   darkly-qt6-git \
   darkly-qt5-git \
   swayosd-git \
   snappy-switcher
 
 # -----------------------------
-# Browser
+# Optional Software Selection
 # -----------------------------
-for browser in firefox brave-bin google-chrome zen-browser-bin; do
-  if is_installed "$browser"; then
-    echo "==> Browser already installed ($browser), skipping."
-    BROWSER_FOUND=1
-    break
+echo "------------------------------------------------"
+echo "==> Custom Software Selection"
+echo "------------------------------------------------"
+
+# 1. Zen Browser
+if is_installed zen-browser-bin; then
+  echo "==> Zen Browser is already installed."
+else
+  read -rp "Install Zen Browser? [y/N]: " ZEN_CONFIRM
+  if [[ "$ZEN_CONFIRM" =~ ^[Yy]$ ]]; then
+    yay_install zen-browser-bin
   fi
-done
+fi
 
-if [[ -z "$BROWSER_FOUND" ]]; then
-  echo "Select browser to install:"
-  echo "1) Brave"
-  echo "2) Zen Browser"
-  echo "3) Firefox"
-  echo "4) Google Chrome"
-  echo "5) Skip"
-  read -rp "Choice [1/2/3/4/5]: " BROWSER_CHOICE
+# 2. Obsidian
+if is_installed obsidian; then
+  echo "==> Obsidian is already installed."
+else
+  read -rp "Install Obsidian? [y/N]: " OBSIDIAN_CONFIRM
+  if [[ "$OBSIDIAN_CONFIRM" =~ ^[Yy]$ ]]; then
+    sudo pacman -S --needed --noconfirm obsidian
+  fi
+fi
 
-  case "$BROWSER_CHOICE" in
-    1) yay -S --needed --noconfirm brave-bin ;;
-    2) yay -S --needed --noconfirm zen-browser-bin ;;
-    3) sudo pacman -S --needed --noconfirm firefox ;;
-    4) yay -S --needed --noconfirm google-chrome ;;
-    *) echo "==> Skipping browser install." ;;
-  esac
+# 3. Spotify
+if is_installed spotify; then
+  echo "==> Spotify is already installed."
+else
+  read -rp "Install Spotify? [y/N]: " SPOTIFY_CONFIRM
+  if [[ "$SPOTIFY_CONFIRM" =~ ^[Yy]$ ]]; then
+    yay_install spotify
+  fi
+fi
+
+# 4. Heroic Games Launcher & Linux Gaming Stack
+if is_installed heroic-games-launcher-bin; then
+  echo "==> Heroic Games Launcher is already installed."
+else
+  read -rp "Install Heroic Games Launcher & Gaming environment (Steam, Gamescope, MangoHud, GameMode)? [y/N]: " HEROIC_CONFIRM
+  if [[ "$HEROIC_CONFIRM" =~ ^[Yy]$ ]]; then
+    pacman_install mangohud lib32-mangohud gamemode lib32-gamemode goverlay steam gamescope
+    yay_install heroic-games-launcher-bin proton-ge-custom-bin protonup-qt-bin adwsteamgtk
+  fi
+fi
+
+# 5. Wine Environment
+if is_installed winetricks; then
+  echo "==> Wine environment is already installed."
+else
+  read -rp "Install Wine & Winetricks environment (For running Windows apps/games)? [y/N]: " WINE_CONFIRM
+  if [[ "$WINE_CONFIRM" =~ ^[Yy]$ ]]; then
+    pacman_install wine-mono wine-gecko winetricks vkd3d
+    yay_install dxvk-bin
+  fi
+fi
+
+# -----------------------------
+# Browser Selector (For alternative choices)
+# -----------------------------
+if is_installed zen-browser-bin || is_installed firefox || is_installed google-chrome || is_installed brave-bin; then
+  echo "==> A browser is already configured, skipping secondary browser selector."
+else
+  for browser in firefox brave-bin google-chrome; do
+    if is_installed "$browser"; then
+      echo "==> Browser already installed ($browser), skipping."
+      BROWSER_FOUND=1
+      break
+    fi
+  done
+
+  if [[ -z "$BROWSER_FOUND" ]]; then
+    echo "Select an alternative browser to install:"
+    echo "1) Brave"
+    echo "2) Firefox"
+    echo "3) Google Chrome"
+    echo "4) Skip"
+    read -rp "Choice [1/2/3/4]: " BROWSER_CHOICE
+
+    case "$BROWSER_CHOICE" in
+      1) yay -S --needed --noconfirm brave-bin ;;
+      2) sudo pacman -S --needed --noconfirm firefox ;;
+      3) yay -S --needed --noconfirm google-chrome ;;
+      *) echo "==> Skipping alternative browser install." ;;
+    esac
+  fi
 fi
 
 cd /usr/share/icons/
@@ -355,15 +406,12 @@ fi
 
 echo "==> Copying dotfiles to home (overwrite enabled)..."
 
-# Copy .config (merge, overwrite same files)
 if [ -d "$SCRIPT_DIR/.config" ]; then
   rsync -a --checksum "$SCRIPT_DIR/.config/" "$HOME/.config/"
 fi
-# Copy .local (merge, overwrite same files)
 if [ -d "$SCRIPT_DIR/.local" ]; then
   rsync -a --checksum "$SCRIPT_DIR/.local/"  "$HOME/.local/"
 fi
-# Copy .zshrc (replace file)
 if [ -f "$SCRIPT_DIR/.zshrc" ]; then
   rsync -a --checksum "$SCRIPT_DIR/.zshrc" "$HOME/.zshrc"
 fi
@@ -427,13 +475,10 @@ fi
 
 EXECS_CONF="$HOME/.config/hypr/hyprland/execs.conf"
 
-# Add both scripts to run on next boot
 echo "exec-once = sleep 3 && ~/n4zl-dotfiles/scripts/monitors.sh && ~/n4zl-dotfiles/scripts/customization.sh" >> "$EXECS_CONF"
-
 echo "exec-once = sleep 1.5 && ~/n4zl-dotfiles/scripts/applying_default_wallpaper.sh" >> "$EXECS_CONF"
 
 echo "✅ Setup complete."
-
 
 # -----------------------------
 # Reboot confirmation
