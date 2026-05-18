@@ -3,7 +3,7 @@
 # mesa lib32-mesa -media-driver vulkan-intel lib32-vulkan-intel
 set -e
 
-SCRIPT_DIR="$HOME/Arch-Space-ZEM"
+SCRIPT_DIR="$HOME/Arch-ZEM"
 
 # -----------------------------
 # Helpers
@@ -475,15 +475,15 @@ fi
 
 EXECS_CONF="$HOME/.config/hypr/hyprland/execs.conf"
 
-echo "exec-once = sleep 3 && ~/n4zl-dotfiles/scripts/monitors.sh && ~/n4zl-dotfiles/scripts/customization.sh" >> "$EXECS_CONF"
-echo "exec-once = sleep 1.5 && ~/n4zl-dotfiles/scripts/applying_default_wallpaper.sh" >> "$EXECS_CONF"
+echo "exec-once = sleep 3 && ~/Arch-ZEM/scripts/monitors.sh && ~/Arch-ZEM/scripts/customization.sh" >> "$EXECS_CONF"
+echo "exec-once = sleep 1.5 && ~/Arch-ZEM/scripts/applying_default_wallpaper.sh" >> "$EXECS_CONF"
 
-echo "✅ Setup complete."
+echo "Setup complete, Enjoy"
 
 # -----------------------------
 # Reboot confirmation
 # -----------------------------
-read -rp "🔄 Reboot now? [y/N]: " REBOOT_CONFIRM
+read -rp "Reboot now? [y/N]: " REBOOT_CONFIRM
 if [[ "$REBOOT_CONFIRM" =~ ^[Yy]$ ]]; then
   sudo reboot
 else
