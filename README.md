@@ -25,14 +25,6 @@
 
 ---
 
-## 📸 Preview
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/52fa67c7-8479-4419-87f0-e1b3ece368cc" />
-
-### Clean
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/7eeed71c-926a-454d-8d95-c3b395aaf89a" />
-
----
-
 ## 🚀 Getting Started
 
 > **WARNING:** This configuration is for advanced users comfortable with Arch Linux and using the terminal.
