@@ -38,6 +38,7 @@ sudo pacman -Syu --noconfirm
 # -----------------------------
 # Base packages
 # -----------------------------
+ echo "==> Install Basics..."
 pacman_install \
   kitty \
   bluez bluez-utils \
@@ -253,6 +254,7 @@ fi
 # -----------------------------
 # AUR packages
 # -----------------------------
+echo "==> Install AUR packages needed"
 yay_install \
   pavucontrol \
   bibata-cursor-theme-bin \
@@ -297,16 +299,6 @@ else
   fi
 fi
 
-# 3. Spotify
-if is_installed spotify; then
-  echo "==> Spotify is already installed."
-else
-  read -rp "Install Spotify? [y/N]: " SPOTIFY_CONFIRM
-  if [[ "$SPOTIFY_CONFIRM" =~ ^[Yy]$ ]]; then
-    yay_install spotify
-  fi
-fi
-
 # 4. Heroic Games Launcher & Linux Gaming Stack
 if is_installed heroic-games-launcher-bin; then
   echo "==> Heroic Games Launcher is already installed."
@@ -332,7 +324,7 @@ fi
 # -----------------------------
 # Browser Selector (For alternative choices)
 # -----------------------------
-if is_installed zen-browser-bin || is_installed firefox || is_installed google-chrome || is_installed brave-bin; then
+if is_installed zen-browser-bin || is_installed google-chrome || is_installed brave-bin; then
   echo "==> A browser is already configured, skipping secondary browser selector."
 else
   for browser in firefox brave-bin google-chrome; do
