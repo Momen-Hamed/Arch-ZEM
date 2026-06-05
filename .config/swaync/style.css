@@ -1,11 +1,13 @@
-:root {
-  --border-radius: 22px;
-  --cc-bg: transparent;
+@import url("colors.css");
 
-  --widget-background: rgb(46, 46, 46);
+:root {
+  --border-radius: 20px;
+  --cc-bg: @surface_container;
+
+  --widget-background: transparent;
   --noti-bg-alpha: 0.6;
 
-  --padding: calc(var(--border-radius) / 2);
+  --padding: 20px;
 }
 
 /* ─── Notification Popup ─────────────────────────────── */
@@ -24,7 +26,7 @@
   background: var(--widget-background);
   border-radius: var(--border-radius);
   padding: 12px 14px;
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
+  border: 0.5px transparent;
 }
 
 .notification-default-action {
@@ -106,7 +108,7 @@
 }
 
 .close-button:hover {
-  background: rgba(255, 60, 60, 0.3);
+  background: rgba(43, 59, 60, 0.3);
   color: #fff;
 }
 
@@ -156,11 +158,11 @@
   margin-top: var(--padding);
 }
 .widget-mpris > box > button:hover {
-  background: rgba(46, 46, 46, 1);
+  background: transparent;
 }
 .widget-mpris-player {
   box-shadow: none;
-  border: var(--border);
+  border: 20px;
   margin: 0 var(--padding);
 }
 .widget-mpris-player:only-child {
