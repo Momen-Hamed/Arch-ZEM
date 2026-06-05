@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WALL_DIR="$HOME/n4zl-dotfiles/wallpaper.jpg"
+WALL_DIR="$HOME/ِArch-ZEM/wallpaper.png"
 
 # -----------------------------
 # Detect monitor FPS (fallback: 60)
