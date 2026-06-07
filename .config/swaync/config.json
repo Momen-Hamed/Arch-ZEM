@@ -1,5 +1,5 @@
 {
-  "$schema": "/etc/xdg/swaync/configSchema.json",
+  "$schema": "/etc/xdg/swaync/config.schema.json",
   "positionX": "right",
   "positionY": "top",
   "control-center-margin-top": 2,
@@ -20,8 +20,12 @@
   "transition-time": 100,
   "hide-on-clear": false,
   "hide-on-action": true,
-  "script-fail-notify": true,
+  "script-fail-notify": true
   "scripts": {
+    "play-sound": {
+      "exec": "mpv --volume=100 --no-video /home/cairo/Desktop/Work/C/windows-11-notify.mp3",
+      "run-on": "receive"
+    },
     "example-script": {
       "exec": "echo 'Do something...'",
       "urgency": "Normal"
