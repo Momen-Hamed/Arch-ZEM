@@ -1,5 +1,3 @@
-@import url("colors.css");
-
 * {
   min-height: 0;
   font-family: "SF Pro Display", sans-serif;
@@ -11,6 +9,8 @@
 
 #waybar {
   background-color: transparent;
+  box-shadow: none;
+  border: none;
 }
 
 window#waybar.empty #window {
@@ -23,68 +23,86 @@ window#waybar.empty #window {
   padding: 0 12px;
   border-radius: 8px;
   font-weight: 700;
-  background-color: @surface_bright;
+  background-color: rgba(17, 21, 27, 0.75);
+  border: 1px solid rgba(162, 183, 203, 0.2);
   transition: all 0.3s ease-in-out;
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #workspaces button.active {
-  color: @background;
-  background-color: @primary_fixed_dim;
+  color: #a2b7cb;
+  background-color: rgba(91, 120, 148, 0.7);
   min-width: 28px;
   transition: all 0.3s ease-in-out;
+  border: 1px solid rgba(162, 183, 203, 0.3);
+  box-shadow: 0 4px 15px 0 rgba(91, 120, 148, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 #workspaces button:not(.empty) {
-  background-color: @primary_fixed_dim;
-  color: @background;
+  background-color: rgba(33, 57, 80, 0.65);
+  color: #a2b7cb;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #workspaces button.urgent {
-  background-color: @error;
-  color: @on_error;
+  background-color: rgba(255, 180, 171, 0.6);
+  color: #690005;
   min-width: 28px;
+  border: 1px solid rgba(255, 180, 171, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 #workspaces button:hover {
-  background-color: @secondary_fixed;
-  color: @background;
+  background-color: rgba(91, 120, 148, 0.65);
+  color: #a2b7cb;
+  border: 1px solid rgba(162, 183, 203, 0.3);
+  box-shadow: 0 4px 15px 0 rgba(91, 120, 148, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 #custom-media_player {
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
   padding: 1.5px 18px 0 16px;
   font-weight: 700;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #custom-weather {
   font-weight: 700;
-  /* font-size: 15px; */
   padding: 1px 13px 0;
-  background-color: @surface_container;
-
-  /* background-color: #2b292f; */
-  /* margin: 5px 0; */
+  background-color: rgba(17, 21, 27, 0.75);
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #custom-launcher {
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
   padding: 1px 18px 0 16px;
   font-size: 16px;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #tray {
   padding: 0.3px 13px 0;
-  background-color: @surface_container;
-  /* margin: 5px 0; */
+  background-color: rgba(17, 21, 27, 0.75);
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #custom-notifications {
   padding: 1px 18px 0 15px;
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
   font-weight: 700;
-  /* background-color: #2b292f; */
-  /* margin: 5px 0; */
   font-size: 17px;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #custom-notifications.dnd-notification,
@@ -96,72 +114,76 @@ window#waybar.empty #window {
   font-size: 0.94em;
   font-weight: 700;
   padding: 1px 11px 0 13px;
-  /* background-color: #2b292f; */
-  /* margin: 5px 0; */
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #workspaces {
-  /* border: 0.5px solid #032412; */
-  /* margin: 5px 5px 5px 5px; */
-  /* padding: 0 5px; */
   border-radius: 18px;
-  /* border-radius: 11px; */
   padding: 5px 5px;
-  background-color: @surface_container;
-
-  /* background-color: #2b292f; */
-  /* margin: 5px 0 5px 6px; */
+  background-color: rgba(17, 21, 27, 0.6);
+  border: 1px solid rgba(162, 183, 203, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #window {
   padding: 1px 10px 0;
-  /* background-color: #2b292f; */
-  /* margin: 5px 8px 5px 0; */
   font-size: 13px;
+  color: rgba(162, 183, 203, 0.7);
 }
 
 #custom-power {
   margin-right: 6px;
 }
+
 #system1 {
   padding: 1px 10px 0 10px;
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
   font-size: 16px;
   font-weight: 700;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #system2 {
   padding: 1px 13px 0 13px;
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
   font-size: 16px;
   font-weight: 700;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
-/* Individual modules */
 
-#bluetooth {
-  margin-right: 13px;
-}
+/* ضبط المسافات بين أجهزة الشبكة، البلوتوث، والبطارية */
 
 #custom-network {
-  margin-right: 16px;
+    margin-right: 16px;
+}
+
+#bluetooth {
+    margin-right: 13px;
 }
 
 #custom-battery {
-  margin-right: 18px;
-  color: @on_tertiary_container;
-  background-color: @surface_container;
-  /* background-color: #2b292f; */
-  /* color: rgb(75, 224, 93); */
-  /* margin: 5px 0; */
-  font-size: 17px;
+    margin-right: 18px;
+    color: rgba(162, 183, 203, 0.8);
+    background-color: transparent;
+    font-size: 17px;
+    border: none;
+    box-shadow: none;
 }
 
 #tray menu {
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.85);
   padding: 4px 0px;
   border-radius: 14px;
   font-size: 0.9em;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #tray window decoration {
@@ -169,9 +191,12 @@ window#waybar.empty #window {
 }
 
 #custom-power_options {
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
   padding: 0 15px;
   font-weight: 700;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #tray * {
@@ -186,39 +211,46 @@ window#waybar.empty #window {
   margin: 1px 5px;
   padding: 5px 0;
   font-weight: 600;
+  color: rgba(162, 183, 203, 0.8);
 }
 
 #custom-keyboard {
   padding: 0.2px 16px 0 13px;
   font-size: 13px;
   font-weight: 700;
-  /* margin: 5px 0; */
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.75);
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 #tray menu menuitem:hover {
-  background-color: @outline_variant;
+  background-color: rgba(91, 120, 148, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 #tray menu separator {
   margin: 5px 8px;
-  border-bottom: 1px solid #555;
+  border-bottom: 1px solid rgba(91, 120, 148, 0.4);
 }
 
 tooltip {
-  background-color: @surface_container;
+  background-color: rgba(17, 21, 27, 0.9);
   border-radius: 12px;
   font-weight: 600;
+  border: 1px solid rgba(162, 183, 203, 0.2);
+  color: rgba(162, 183, 203, 0.9);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 tooltip label {
   padding: 0 3px;
 }
 
-
 #cpu, #memory {
-    background: transparent; /* إزالة الخلفية */
-    border: none;           /* إزالة أي حدود */
-    box-shadow: none;       /* إزالة أي هالة أو ظل */
-    padding: 0 5px;         /* مساحة بسيطة للتنفس */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0 5px;
+  color: rgba(162, 183, 203, 0.7);
 }
