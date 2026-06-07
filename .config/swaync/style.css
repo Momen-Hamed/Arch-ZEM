@@ -2,7 +2,7 @@
 
 :root {
   --border-radius: 20px;
-  --cc-bg: @surface_container;
+  --cc-bg: transparent;
 
   --widget-background: rgba(17, 21, 27, 0.75);
   --noti-bg-alpha: 0.6;
